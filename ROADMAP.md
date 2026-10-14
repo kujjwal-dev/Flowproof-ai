@@ -11,7 +11,7 @@
 
 ## Phase 1 — Architecture
 
-- [ ] ARCHITECTURE.md: layers, data model, security, metadata access, AI integration, testing
+- [x] ARCHITECTURE.md: layers, data model, security, metadata access, AI integration, testing (proposed)
 - [ ] Decide the Flow metadata access pattern for the MVP and for the installable product
 
 ## Phase 2 — Application foundation
