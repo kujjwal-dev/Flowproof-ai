@@ -1,0 +1,45 @@
+{
+  "name": "flowproof-ai",
+  "private": true,
+  "version": "1.0.0",
+  "description": "FlowProof AI - Salesforce automation investigation",
+  "scripts": {
+    "lint": "eslint **/{aura,lwc}/**/*.js",
+    "test": "npm run test:unit",
+    "test:unit": "sfdx-lwc-jest",
+    "test:unit:watch": "sfdx-lwc-jest --watch",
+    "test:unit:debug": "sfdx-lwc-jest --debug",
+    "test:unit:coverage": "sfdx-lwc-jest --coverage",
+    "prettier": "prettier --write \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
+    "prettier:verify": "prettier --check \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
+    "prepare": "husky || true",
+    "precommit": "lint-staged",
+    "skills:install": "npx -y skills@1.7.2 add forcedotcom/sf-skills -a claude-code --copy -y -s automation-flow-generate design-systems-slds-apply design-systems-slds-validate dx-code-analyzer-configure dx-code-analyzer-run dx-org-permission-set-assign experience-lds-best-practices-apply experience-lwc-base-components-integrate experience-lwc-generate experience-lwc-security-validate integration-connectivity-generate platform-apex-anonymous-run platform-apex-generate platform-apex-logs-debug platform-apex-test-generate platform-apex-test-run platform-custom-application-generate platform-custom-field-generate platform-custom-metadata-type-generate platform-custom-object-generate platform-custom-tab-generate platform-data-and-tooling-api-context-get platform-deploy-validate platform-docs-get platform-flexipage-generate platform-lightning-app-coordinate platform-metadata-api-context-get platform-metadata-deploy platform-metadata-retrieve platform-permission-set-generate platform-soql-query"
+  },
+  "devDependencies": {
+    "@lwc/eslint-plugin-lwc": "^3.1.0",
+    "@prettier/plugin-xml": "^3.4.1",
+    "@salesforce/eslint-config-lwc": "^4.0.0",
+    "@salesforce/eslint-plugin-aura": "^3.0.0",
+    "@salesforce/eslint-plugin-lightning": "^2.0.0",
+    "@salesforce/sfdx-lwc-jest": "^7.0.2",
+    "eslint": "^9.29.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-jest": "^28.14.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
+    "prettier": "^3.5.3",
+    "prettier-plugin-apex": "^2.2.6"
+  },
+  "lint-staged": {
+    "**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}": [
+      "prettier --write"
+    ],
+    "**/{aura,lwc}/**/*.js": [
+      "eslint"
+    ],
+    "**/lwc/**": [
+      "sfdx-lwc-jest -- --bail --findRelatedTests --passWithNoTests"
+    ]
+  }
+}

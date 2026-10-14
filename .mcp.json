@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "salesforce-dx": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@salesforce/mcp@0.30.15",
+        "--orgs",
+        "flowproof-dev",
+        "--toolsets",
+        "orgs,metadata,data,testing,lwc-experts,code-analysis"
+      ]
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "ask": [
+      "mcp__salesforce-dx__deploy_metadata",
+      "Bash(sf project deploy:*)",
+      "Bash(sf project delete:*)",
+      "Bash(sf org delete:*)",
+      "Bash(sf data delete:*)",
+      "Bash(sf data update:*)",
+      "Bash(sf data create:*)",
+      "Bash(sf data import:*)",
+      "Bash(sf apex run:*)",
+      "Bash(git push:*)",
+      "Bash(gh repo create:*)"
+    ]
+  }
+}
