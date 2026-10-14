@@ -18,11 +18,13 @@ public with sharing class FlowProofFlowParser {
         'dateValue',
         'dateTimeValue'
     };
-    private static final List<String> NON_LITERAL_KEYS = new List<String>{
-        'apexValue',
-        'sobjectValue',
-        'setupReference',
-        'transformValueReference'
+    // Keys that describe another key's value rather than holding a comparison value themselves.
+    private static final Set<String> ANNOTATION_KEYS = new Set<String>{
+        'formuladatatype',
+        'setupreferencetype',
+        'complexvaluetype',
+        'inputconfiguratormode',
+        'isreversevaluemapping'
     };
 
     /**
@@ -97,8 +99,10 @@ public with sharing class FlowProofFlowParser {
                 asString(value.get('formulaExpression'))
             );
         }
-        for (String key : NON_LITERAL_KEYS) {
-            if (value.get(key) != null) {
+        // Any other populated key (apexValue, sobjectValue, timeValue, complexValue, collectionElements,
+        // keys added in later API versions, ...) is a value kind the evaluator does not understand.
+        for (String key : value.keySet()) {
+            if (value.get(key) != null && !ANNOTATION_KEYS.contains(key.toLowerCase())) {
                 return FlowProofFlowModel.referenceValue(
                     FlowProofFlowModel.ValueType.OTHER,
                     key + ': ' + String.valueOf(value.get(key))

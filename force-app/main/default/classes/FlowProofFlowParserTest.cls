@@ -1,10 +1,65 @@
 /**
- * Unit tests for FlowProofFlowParser. Fixtures follow the Tooling API Flow.Metadata
- * JSON shape, where every FlowElementReferenceOrValue key is present and all but one
- * are null. To be re-checked against metadata retrieved from a real Flow (Phase 5).
+ * Unit tests for FlowProofFlowParser. Hand-built fixtures follow the Tooling API
+ * Flow.Metadata JSON shape (every FlowElementReferenceOrValue key present, all but one
+ * null). The FlowProofTestOnboardingFlow static resource is the real Flow.Metadata of
+ * the demo Opportunity_Onboarding Flow, captured from flowproof-dev.
  */
 @IsTest
 private class FlowProofFlowParserTest {
+    private static final String REAL_FLOW_RESOURCE = 'FlowProofTestOnboardingFlow';
+
+    @IsTest
+    static void shouldParseRealToolingMetadataOfOnboardingFlow() {
+        FlowProofFlowModel.FlowStart start = parse(realFlowJson());
+
+        Assert.areEqual('Opportunity', start.objectApiName, 'Trigger object should be read from real metadata');
+        Assert.areEqual('RecordAfterSave', start.triggerType, 'Trigger type should be read from real metadata');
+        Assert.isTrue(start.requiresRecordChangedToMeetCriteria, 'Only-when-changed flag should be read');
+        Assert.areEqual(3, start.filters.size(), 'All three entry conditions should be parsed');
+        Assert.areEqual('Region__c', start.filters[2].field, 'Third condition is the Region condition');
+        Assert.isTrue(start.filters[1].value.numberValue == 10000, 'Amount threshold should be 10000');
+    }
+
+    @IsTest
+    static void shouldReproduceBriefExampleFromRealFlowMetadata() {
+        FlowProofFlowModel.FlowStart start = new FlowProofFlowParser().parseStart(realFlowJson());
+        FlowProofRecordSnapshot snapshot = new FlowProofRecordSnapshot('Opportunity');
+        snapshot.putValue('StageName', 'PICKLIST', 'Closed Won');
+        snapshot.putValue('Amount', 'CURRENCY', 25000);
+        snapshot.putValue('Region__c', 'PICKLIST', null);
+
+        Test.startTest();
+        FlowProofEvaluationResult result = new FlowProofConditionEvaluator().evaluate(start, snapshot);
+        Test.stopTest();
+
+        Assert.areEqual(
+            FlowProofEvaluationResult.OverallResult.NOT_SATISFIED,
+            result.overall,
+            'Blank Region fails the Flow'
+        );
+        Assert.areEqual(
+            FlowProofEvaluationResult.ConditionOutcome.NO_MATCH,
+            result.conditions[2].outcome,
+            'Region is the failing condition'
+        );
+    }
+
+    @IsTest
+    static void shouldMarkUnlistedValueKindAsOther() {
+        String json =
+            '{"start":{"object":"Opportunity","filterLogic":"and","filters":[{"field":"Time__c","operator":"EqualTo",' +
+            '"value":{"stringValue":null,"formulaDataType":null,"timeValue":"09:00:00.000Z"}}]}}';
+
+        FlowProofFlowModel.ConditionValue value = parse(json).filters[0].value;
+
+        Assert.areEqual(
+            FlowProofFlowModel.ValueType.OTHER,
+            value.valueType,
+            'Value kinds not handled explicitly must not be NONE'
+        );
+        Assert.isTrue(value.referenceOrExpression.startsWith('timeValue'), 'The key name should be reported');
+    }
+
     @IsTest
     static void shouldParseTriggerSettings() {
         String json = metadataJson(
@@ -158,6 +213,21 @@ private class FlowProofFlowParserTest {
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────
+
+    /**
+     * Loads the real Flow.Metadata fixture of the demo Opportunity_Onboarding Flow.
+     * @return the metadata JSON
+     */
+    private static String realFlowJson() {
+        StaticResource fixture = [
+            SELECT Body
+            FROM StaticResource
+            WHERE Name = :REAL_FLOW_RESOURCE
+            WITH USER_MODE
+            LIMIT 1
+        ];
+        return fixture.Body.toString();
+    }
 
     private static FlowProofFlowModel.FlowStart parse(String json) {
         Test.startTest();

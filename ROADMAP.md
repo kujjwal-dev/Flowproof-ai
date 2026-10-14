@@ -25,7 +25,7 @@
 
 - [ ] Flow metadata service: active version, trigger object/type, entry conditions
 - [ ] Record service: user-mode field retrieval and inaccessible-field reporting
-- [ ] Condition evaluator, MVP operators: EqualTo, NotEqualTo, GreaterThan, LessThan, IsNull, AND logic
+- [x] Condition evaluator, MVP operators: EqualTo, NotEqualTo, GreaterThan, LessThan, GreaterThanOrEqualTo, LessThanOrEqualTo, IsNull; AND / OR logic (tested, 74 tests)
 - [ ] Explicit _Unsupported_ results for formulas, custom logic, relationships, and other operators
 - [ ] Findings with evidence categories, plus recommended next steps
 
@@ -37,7 +37,7 @@
 
 ## Phase 5 — MVP demo
 
-- [ ] Demo Flow `Opportunity_Onboarding` (Closed Won → Task) plus synthetic Opportunities (needs approval)
+- [x] Demo Flow `Opportunity_Onboarding` (Closed Won → Task) plus synthetic Opportunities: deployed and verified (Globex gets a Task, Acme does not)
 - [ ] End-to-end investigation against real org metadata
 
 ## Phase 6 — Quality
