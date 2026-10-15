@@ -39,7 +39,7 @@
 ## Phase 5 — MVP demo
 
 - [x] Demo Flow `Opportunity_Onboarding` (Closed Won → Task) plus synthetic Opportunities: deployed and verified (Globex gets a Task, Acme does not)
-- [ ] End-to-end investigation against real org metadata
+- [x] End-to-end investigation against real org metadata: deployed (0Afbm00000jh49jCAA) and verified on Acme (conditions not met: Region blank) and Globex (conditions met)
 
 ## Phase 6 — Quality
 

@@ -228,4 +228,32 @@ private class FlowProofToolingFlowSourceTest {
             throw new CalloutException('Unable to complete the callout');
         }
     }
+
+    private class UncommittedWorkMock implements HttpCalloutMock {
+        public HttpResponse respond(HttpRequest request) {
+            throw new CalloutException(
+                'You have uncommitted work pending. Please commit or rollback before calling out'
+            );
+        }
+    }
+
+    @IsTest
+    static void shouldNameTransactionOrderWhenCalloutFollowsDml() {
+        Test.setMock(HttpCalloutMock.class, new UncommittedWorkMock());
+        FlowProofMetadataException.Reason reason;
+
+        Test.startTest();
+        try {
+            new FlowProofToolingFlowSource().getStart(VERSION_ID);
+        } catch (FlowProofMetadataException e) {
+            reason = e.reason;
+        }
+        Test.stopTest();
+
+        Assert.areEqual(
+            FlowProofMetadataException.Reason.CALLOUT_AFTER_DML,
+            reason,
+            'The real cause must be named instead of asking to authorize'
+        );
+    }
 }

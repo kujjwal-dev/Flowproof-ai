@@ -124,6 +124,19 @@ private class FlowProofDiagnosticEngineTest {
     }
 
     @IsTest
+    static void shouldExplainCalloutAfterDml() {
+        FlowProofDiagnosticContext context = contextWith(null);
+        context.start = null;
+        context.metadataFailure = FlowProofMetadataException.Reason.CALLOUT_AFTER_DML;
+        FlowProofFinding finding = find(diagnose(context), 'CONDITIONS_UNREADABLE');
+        Assert.isTrue(
+            finding.recommendation.contains('before saving'),
+            'Next step should explain the transaction order'
+        );
+        Assert.isFalse(finding.recommendation.contains('Allow Access'), 'Authorizing would not help here');
+    }
+
+    @IsTest
     static void shouldExplainHiddenManagedDefinitions() {
         FlowProofDiagnosticContext context = contextWith(null);
         context.start = null;

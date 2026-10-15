@@ -107,14 +107,21 @@ public with sharing class FlowProofToolingFlowSource implements FlowProofFlowDef
         try {
             return query('SELECT Metadata FROM Flow WHERE Id = \'' + flowVersionId + '\'');
         } catch (CalloutException e) {
-            FlowProofMetadataException failure = new FlowProofMetadataException(
+            if (e.getMessage()?.containsIgnoreCase('uncommitted work') == true) {
+                throw new FlowProofMetadataException(
+                        'Salesforce does not allow FlowProof to call the org API after data was changed earlier in the same ' +
+                        'transaction, so the Flow definition was not read.',
+                        e
+                    )
+                    .withReason(FlowProofMetadataException.Reason.CALLOUT_AFTER_DML);
+            }
+            throw new FlowProofMetadataException(
                     'FlowProof could not reach the org API through the FlowProof_Org_API named credential. ' +
                         AUTHORIZE_STEP +
                         ' If that is already done, ask an admin to check the FlowProof Org API Access permission set.',
                     e
                 )
                 .withReason(FlowProofMetadataException.Reason.CONNECTION_FAILED);
-            throw failure;
         }
     }
 

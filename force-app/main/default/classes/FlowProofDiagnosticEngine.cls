@@ -100,6 +100,14 @@ public with sharing class FlowProofDiagnosticEngine {
         );
         String detail = context.metadataFailureMessage ?? 'The Flow definition could not be read.';
         switch on context.metadataFailure {
+            when CALLOUT_AFTER_DML {
+                return finding.describe(
+                    'FlowProof could not read the Flow\'s entry conditions',
+                    detail,
+                    'Run the investigation from the FlowProof AI app. If you call FlowProof from your own Apex, ' +
+                    'run the investigation before saving any records in the same transaction.'
+                );
+            }
             when NOT_AUTHORIZED, CONNECTION_FAILED {
                 return finding.describe(
                     'FlowProof could not read the Flow\'s entry conditions',

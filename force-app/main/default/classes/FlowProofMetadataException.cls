@@ -19,7 +19,9 @@ public with sharing class FlowProofMetadataException extends FlowProofException 
         /** The response could not be understood. */
         INVALID_RESPONSE,
         /** The org API returned another error status. */
-        UNAVAILABLE
+        UNAVAILABLE,
+        /** Salesforce refused the callout because data was changed earlier in the same transaction. */
+        CALLOUT_AFTER_DML
     }
 
     /** Why the definition could not be read; null only if never set. */
