@@ -19,12 +19,13 @@ Current record values are not necessarily the values present when a Flow ran. A 
 
 ## Status
 
-| Area                                                    | Status                                   |
-| ------------------------------------------------------- | ---------------------------------------- |
-| Phase 0 — Environment setup                             | Done                                     |
-| Phase 1 — Architecture                                  | Done (Tooling API access verified)       |
-| Phase 3 — Investigation engine                          | In progress: evaluator and parser tested |
-| Phases 2, 4–7 — Foundation, Gemini, MVP, testing, CI/CD | Planned                                  |
+| Area                                                 | Status                                                 |
+| ---------------------------------------------------- | ------------------------------------------------------ |
+| Phase 0 — Environment setup                          | Done                                                   |
+| Phase 1 — Architecture                               | Done (Tooling API access verified)                     |
+| Phases 2–3 — App foundation and investigation engine | Done, deployed to flowproof-dev                        |
+| Phase 5 — MVP demo                                   | Done: verified end to end on real metadata and records |
+| Phases 4, 6–7 — Gemini, quality pass, CI/CD          | Planned                                                |
 
 See [ROADMAP.md](ROADMAP.md) for the backlog.
 
