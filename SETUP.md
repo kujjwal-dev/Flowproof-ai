@@ -71,76 +71,40 @@ When Claude Code first opens the project it asks you to approve the project MCP 
 
 FlowProof reads Flow entry conditions through the org's own Tooling API. Apex can't use the Lightning session for API calls, so it calls back into the org through a Named Credential. That Named Credential uses **per-user OAuth**: each user authorizes once, and every call runs with that user's own permissions.
 
-Steps verified against Salesforce Help (Winter '27) on 2026-10-15. Labels marked † weren't confirmed word-for-word, so look for the closest match.
+### What gets deployed
 
-`<MD>` is the org's My Domain URL. For `flowproof-dev` it is `https://orgfarm-9ef46cef41-dev-ed.develop.my.salesforce.com`. Use this same host everywhere below.
+Everything except secrets lives in `org-config/`, a package directory kept out of the product package because it contains this org's My Domain URL:
 
-**A. External Auth Identity Provider** (created first so Salesforce generates the callback URL)
+| Component                       | Name                       | Purpose                                                                                           |
+| ------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------- |
+| External Auth Identity Provider | `FlowProof_Org_IdP`        | Log in against this org (authorize, token, and userinfo URLs)                                     |
+| External Client App             | `FlowProof_Org_API`        | The OAuth app: scopes `Api` and `RefreshToken`, self-authorize, refresh token valid until revoked |
+| External Credential             | `FlowProof_Org_EC`         | OAuth browser flow through the IdP, with a per-user principal `PerUser`                           |
+| Named Credential                | `FlowProof_Org_API`        | What Apex calls: `callout:FlowProof_Org_API/services/data/...`                                    |
+| Permission set                  | `FlowProof_Org_API_Access` | Principal access plus User External Credentials object access                                     |
 
-1. Setup → Quick Find **Named Credentials** → **External Auth Identity Providers** tab → **New**.
-2. Label `FlowProof Org IdP`, Name `FlowProof_Org_IdP`.
-   - Authentication Protocol **OAuth 2.0**.
-   - Authentication Flow Type **Authorization Code (Browser Flow)**.
-3. Client ID and Client Secret: type `tbd` for now.
-   - Authorize Endpoint URL `<MD>/services/oauth2/authorize`.
-   - Token Endpoint URL `<MD>/services/oauth2/token`.
-   - User Info Endpoint URL `<MD>/services/oauth2/userinfo`.
-4. Tick **Use Proof Key for Code Exchange (PKCE) Extension** and **Pass client credentials in request body**. **Save**.
-5. Copy the **Callback URL** shown on the detail page. Copy it; don't retype it.
+Deploy the IdP first (`org-config/main/default/externalAuthIdentityProviders`), then the rest. The IdP's callback URL is `<My Domain>/services/extidp/callback` and is already set in the External Client App. Assign the permission set to each user who runs investigations.
 
-**B. External Client App**
+> **Never retrieve `ExtlClntAppGlobalOauthSettings` into this project.** A retrieve includes the consumer key, and that must not reach Git.
 
-6. Setup → **App Manager** → **New External Client App**.
-   - Name `FlowProof Org API`, your contact email.
-   - Distribution State **Local**.
-7. **Enable OAuth**. Callback URL = the URL from step 5. Scopes:
-   - **Manage user data via APIs (api)**
-   - **Perform requests at any time (refresh_token, offline_access)**
-8. Security checkboxes:
-   - Turn on **Require Secret for Web Server Flow**, **Require Secret for Refresh Token Flow**, and **Require PKCE**.
-   - Leave refresh-token rotation, JWT access tokens, and every other flow off. **Create** / **Save**.
-9. Edit the app's **Policies**:
-   - Permitted Users: **All users can self-authorize**.
-   - Refresh token: **valid until revoked**†.
-10. Open the app's OAuth settings → **Consumer Key and Secret**† (you may be asked to verify your identity). Copy both values.
-11. Go back to `FlowProof Org IdP` → **Edit**. Paste the Consumer Key as Client ID and the Consumer Secret as Client Secret → **Save**. OAuth changes can take **up to 15 minutes** to take effect.
+### Two manual steps (secrets and consent can't be automated)
 
-**C. External Credential**
+Salesforce only reveals an app's consumer secret after an identity-verification code, and only you can give OAuth consent.
 
-12. Named Credentials → **External Credentials** tab → **New**:
-    - Label `FlowProof Org EC`, Name `FlowProof_Org_EC`.
-    - Authentication Protocol **OAuth 2.0**, Flow Type **Browser Flow**.
-    - Scope `api refresh_token`.
-    - Identity Provider: **External Auth Identity Provider** → `FlowProof_Org_IdP`.
-    - **Save**.
-13. **Principals** → **New**: Parameter Name `PerUser`, Sequence 1, Identity Type **Per User Principal** → **Save**. The name and type can't be changed later.
-
-**D. Named Credential**
-
-14. **Named Credentials** tab → **New** (not "New Legacy"):
-    - Label `FlowProof Org API`, Name `FlowProof_Org_API`.
-    - URL `<MD>`.
-    - **Enabled for Callouts** on; External Credential `FlowProof_Org_EC`; **Generate Authorization Header** on.
-    - Both "Allow Formulas" options off.
-    - **Save**.
-
-**E. Permission set**
-
-15. Setup → **Permission Sets** → **New**: Label `FlowProof Org API Access` → Save.
-16. **External Credential Principal Access** → Edit → enable `FlowProof_Org_EC - PerUser` → Save.
-17. **Object Settings** → **User External Credentials** → Edit → **Read, Create, Edit, Delete** → Save.
-18. **Manage Assignments** → assign the set to yourself.
-
-**F. Authorize (each user, once)**
-
-19. Avatar → **Settings** → Quick Find **External Credentials** → `FlowProof Org EC` → **Allow Access** → log in → **Allow**. The status should change to **Configured**.
+1. **Copy the app credentials into the identity provider**
+   1. Setup → **External Client App Manager** → `FlowProof Org API` → **Settings** tab → **OAuth Settings** → **Consumer Key and Secret**. Enter the code Salesforce emails you.
+   2. Setup → **Named Credentials** → **External Auth Identity Providers** tab → `FlowProof Org IdP` → **Edit**.
+   3. Paste the Consumer Key as **Client ID** and the Consumer Secret as **Client Secret** → **Save**.
+2. **Authorize once**
+   1. Avatar → **Settings** → Quick Find **External Credentials** → `FlowProof Org EC` → **Allow Access**.
+   2. Log in if asked → **Allow**.
+   3. The status should change to **Configured**.
 
 **If something goes wrong**
 
-- `redirect_uri_mismatch`: the callback URL in step 7 must match step 5 exactly.
-- Callouts fail with an access error: both step 16 and step 17 are required.
-- `invalid_client` right after setup: wait 15 minutes (step 11).
-- Refresh fails after the first hour: turn off **Require Secret for Refresh Token Flow** in step 8. It's unverified whether the identity provider sends the secret when refreshing.
+- `invalid_client` or `invalid client credentials`: re-check step 1. New OAuth settings can take a few minutes to take effect.
+- `redirect_uri_mismatch`: the External Client App's callback URL must be exactly `<My Domain>/services/extidp/callback`.
+- Callouts fail with an access error: the user is missing the `FlowProof_Org_API_Access` permission set.
 
 ## 7. Gemini API key (Phase 4)
 

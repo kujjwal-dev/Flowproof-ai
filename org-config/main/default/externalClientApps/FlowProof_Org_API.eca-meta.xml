@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ExternalClientApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+    <contactEmail>khannaujjwal06@gmail.com</contactEmail>
+    <description
+  >FlowProof AI: lets FlowProof call this org's own Tooling API as the signed-in user, through the FlowProof_Org_IdP identity provider.</description>
+    <distributionState>Local</distributionState>
+    <isProtected>false</isProtected>
+    <label>FlowProof Org API</label>
+</ExternalClientApplication>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- No consumer key or secret here: Salesforce generates them. Never retrieve this type into the project. -->
+<ExtlClntAppGlobalOauthSettings xmlns="http://soap.sforce.com/2006/04/metadata">
+    <callbackUrl
+  >https://orgfarm-9ef46cef41-dev-ed.develop.my.salesforce.com/services/extidp/callback</callbackUrl>
+    <externalClientApplication>FlowProof_Org_API</externalClientApplication>
+    <isConsumerSecretOptional>false</isConsumerSecretOptional>
+    <isIntrospectAllTokens>false</isIntrospectAllTokens>
+    <isPkceRequired>false</isPkceRequired>
+    <isSecretRequiredForRefreshToken>true</isSecretRequiredForRefreshToken>
+    <label>FlowProof Org API Global OAuth Settings</label>
+    <shouldRotateConsumerKey>false</shouldRotateConsumerKey>
+    <shouldRotateConsumerSecret>false</shouldRotateConsumerSecret>
+</ExtlClntAppGlobalOauthSettings>
