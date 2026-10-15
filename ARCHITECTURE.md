@@ -144,7 +144,7 @@ _Unverified_ (needs tests against the platform):
 
 ## 8. Integrations
 
-### 8.1 Flow metadata: same-org Tooling API (decision needed)
+### 8.1 Flow metadata: same-org Tooling API (decided: A, verified 2026-10-15)
 
 Apex can't read entry conditions with SOQL, and the Apex `Metadata` namespace can't retrieve Flows (§10.1–10.3). Lightning session IDs can't call the API. The supported route is a **Named Credential to the org's own API**.
 
@@ -158,7 +158,14 @@ Apex can't read entry conditions with SOQL, and the Apex `Metadata` namespace ca
 
 **Recommendation:** build A as the primary source and keep B as a test fixture and offline fallback behind the same interface.
 
-A needs an org configuration change (creating an External Client App), so it waits for your approval. If A isn't authorized for a user, FlowProof still lists candidate Flows from `FlowDefinitionView` and reports the conditions as `INSUFFICIENT_EVIDENCE`.
+**Status:** A is deployed from `org-config/` (see [SETUP.md](SETUP.md) §6) and verified. An anonymous Apex callout to `callout:FlowProof_Org_API/services/data/v68.0/tooling/query` returned the demo Flow's entry conditions with HTTP 200.
+
+Two details were learned from the org and aren't in the public docs:
+
+- The identity provider needs PKCE (`IdentityProviderOptions` / `PkceEnabled = true`). Without it, the authorize endpoint rejects the login with "missing required code challenge".
+- It needs `ClientAuthentication = ClientSecretPost`.
+
+If A isn't authorized for a user, FlowProof still lists candidate Flows from `FlowDefinitionView` and reports the conditions as `INSUFFICIENT_EVIDENCE`, with instructions to click **Allow Access**.
 
 ### 8.2 Gemini
 

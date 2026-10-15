@@ -19,11 +19,12 @@ Current record values are not necessarily the values present when a Flow ran. A 
 
 ## Status
 
-| Area                                                         | Status      |
-| ------------------------------------------------------------ | ----------- |
-| Phase 0 — Environment setup                                  | In progress |
-| Phase 1 — Architecture                                       | Planned     |
-| Phases 2–7 — Foundation, engine, Gemini, MVP, testing, CI/CD | Planned     |
+| Area                                                    | Status                                   |
+| ------------------------------------------------------- | ---------------------------------------- |
+| Phase 0 — Environment setup                             | Done                                     |
+| Phase 1 — Architecture                                  | Done (Tooling API access verified)       |
+| Phase 3 — Investigation engine                          | In progress: evaluator and parser tested |
+| Phases 2, 4–7 — Foundation, Gemini, MVP, testing, CI/CD | Planned                                  |
 
 See [ROADMAP.md](ROADMAP.md) for the backlog.
 

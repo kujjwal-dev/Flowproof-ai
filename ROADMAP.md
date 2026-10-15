@@ -12,7 +12,7 @@
 ## Phase 1 — Architecture
 
 - [x] ARCHITECTURE.md: layers, data model, security, metadata access, AI integration, testing (proposed)
-- [ ] Decide the Flow metadata access pattern for the MVP and for the installable product
+- [x] Flow metadata access: Tooling API via the per-user `FlowProof_Org_API` named credential (option A), verified end to end from Apex
 
 ## Phase 2 — Application foundation
 
@@ -26,7 +26,8 @@
 - [ ] Flow metadata service: active version, trigger object/type, entry conditions
 - [ ] Record service: user-mode field retrieval and inaccessible-field reporting
 - [x] Condition evaluator, MVP operators: EqualTo, NotEqualTo, GreaterThan, LessThan, GreaterThanOrEqualTo, LessThanOrEqualTo, IsNull; AND / OR logic (tested, 74 tests)
-- [ ] Explicit _Unsupported_ results for formulas, custom logic, relationships, and other operators
+- [x] Explicit _Unsupported_ results for formulas, custom logic, relationships, and other operators
+- [x] Flow metadata parser (Tooling `Flow.Metadata` JSON), tested against real metadata from the org
 - [ ] Findings with evidence categories, plus recommended next steps
 
 ## Phase 4 — Gemini integration (optional layer)
