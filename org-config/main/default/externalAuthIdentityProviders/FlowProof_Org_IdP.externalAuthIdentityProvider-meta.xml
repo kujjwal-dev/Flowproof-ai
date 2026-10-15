@@ -5,6 +5,16 @@
     <description
   >FlowProof AI: OAuth browser flow against this org's own login, so FlowProof can call this org's Tooling API as the current user. Client ID/secret are set in the org, never in source.</description>
     <externalAuthIdentityProviderParameters>
+        <parameterName>ClientAuthentication</parameterName>
+        <parameterType>ClientAuthentication</parameterType>
+        <parameterValue>ClientSecretPost</parameterValue>
+    </externalAuthIdentityProviderParameters>
+    <externalAuthIdentityProviderParameters>
+        <parameterName>PkceEnabled</parameterName>
+        <parameterType>IdentityProviderOptions</parameterType>
+        <parameterValue>true</parameterValue>
+    </externalAuthIdentityProviderParameters>
+    <externalAuthIdentityProviderParameters>
         <parameterName>AuthorizeUrl</parameterName>
         <parameterType>AuthorizeUrl</parameterType>
         <parameterValue
