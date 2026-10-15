@@ -1,0 +1,196 @@
+<template>
+  <template lwc:if={result}>
+    <lightning-card icon-name="utility:metrics">
+      <h2 slot="title" class="results-title">{title}</h2>
+      <div slot="actions">
+        <lightning-button
+          label="Open record"
+          icon-name="utility:new_window"
+          onclick={handleOpenRecord}
+          class="open-record"
+        ></lightning-button>
+      </div>
+
+      <div class="slds-p-horizontal_medium">
+        <div class="slds-grid slds-wrap slds-gutters_small slds-m-bottom_small">
+          <div class="slds-col">
+            <lightning-badge
+              label={overall.label}
+              class={overall.badgeClass}
+              data-id="overall"
+            ></lightning-badge>
+          </div>
+          <div
+            class="slds-col slds-text-body_small slds-text-color_weak slds-text-align_right"
+          >
+            {result.objectApiName} record {result.recordId}
+            <template lwc:if={result.investigatedAt}>
+              &nbsp;·&nbsp;
+              <lightning-formatted-date-time
+                value={result.investigatedAt}
+                year="numeric"
+                month="short"
+                day="2-digit"
+                hour="2-digit"
+                minute="2-digit"
+              ></lightning-formatted-date-time>
+            </template>
+          </div>
+        </div>
+
+        <template lwc:if={result.expectedOutcome}>
+          <p class="slds-m-bottom_small expected-outcome">
+            <strong>Expected outcome:</strong> {result.expectedOutcome}
+          </p>
+        </template>
+
+        <div
+          class="slds-scoped-notification slds-theme_info slds-m-bottom_medium execution-notice"
+          role="status"
+        >
+          <div class="slds-media">
+            <div class="slds-media__figure">
+              <lightning-icon
+                icon-name="utility:info"
+                size="x-small"
+                alternative-text="Note"
+              ></lightning-icon>
+            </div>
+            <div class="slds-media__body">
+              <p>
+                <strong>Historical execution: not confirmed.</strong>
+                Salesforce keeps no per-record history of record-triggered Flow
+                runs. These results use the Flow's current definition and the
+                record's current values, which may differ from the values at the
+                time of the save.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="slds-text-heading_small slds-m-bottom_x-small">
+          Findings ({findingCount})
+        </h3>
+        <ul
+          class="slds-has-dividers_around-space slds-m-bottom_medium findings"
+        >
+          <template for:each={findings} for:item="finding">
+            <li key={finding.key} class="slds-item finding">
+              <div class="slds-media">
+                <div class="slds-media__figure">
+                  <lightning-icon
+                    icon-name={finding.severity.iconName}
+                    variant={finding.severity.iconVariant}
+                    size="small"
+                    alternative-text={finding.severityText}
+                  ></lightning-icon>
+                </div>
+                <div class="slds-media__body">
+                  <div
+                    class="slds-grid slds-wrap slds-grid_vertical-align-center"
+                  >
+                    <h4
+                      class="slds-text-heading_small slds-m-right_small finding-title"
+                    >
+                      {finding.title}
+                    </h4>
+                    <lightning-badge
+                      label={finding.categoryInfo.label}
+                      class={finding.categoryInfo.badgeClass}
+                    ></lightning-badge>
+                  </div>
+                  <p class="slds-m-top_xx-small finding-detail">
+                    {finding.detail}
+                  </p>
+                  <p class="slds-m-top_xx-small finding-next-step">
+                    <strong>Next step:</strong> {finding.recommendation}
+                  </p>
+                </div>
+              </div>
+            </li>
+          </template>
+        </ul>
+
+        <h3 class="slds-text-heading_small slds-m-bottom_x-small">
+          Entry conditions
+        </h3>
+        <template lwc:if={hasConditions}>
+          <p class="slds-m-bottom_x-small overall-reason">{overallReason}</p>
+          <div class="slds-scrollable_x slds-m-bottom_medium">
+            <table
+              class="slds-table slds-table_bordered slds-table_cell-buffer conditions-table"
+              aria-label="Entry condition results"
+            >
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col">
+                    <div class="slds-truncate" title="Number">#</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Field">Field</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Operator">Operator</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Expected">Expected</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Current value">
+                      Current value
+                    </div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Result">Result</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate" title="Why">Why</div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={conditions} for:item="condition">
+                  <tr key={condition.key} class="condition-row">
+                    <th scope="row">{condition.index}</th>
+                    <td>{condition.field}</td>
+                    <td>{condition.operatorText}</td>
+                    <td>{condition.expectedDisplay}</td>
+                    <td>{condition.actualText}</td>
+                    <td>
+                      <lightning-badge
+                        label={condition.outcomeInfo.label}
+                        class={condition.outcomeInfo.badgeClass}
+                      ></lightning-badge>
+                    </td>
+                    <td class="slds-cell-wrap">{condition.reason}</td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </template>
+        <template lwc:else>
+          <p class="slds-m-bottom_medium no-conditions">{noConditionsText}</p>
+        </template>
+
+        <h3 class="slds-text-heading_small slds-m-bottom_x-small">Flow</h3>
+        <dl
+          class="slds-list_horizontal slds-wrap slds-m-bottom_medium flow-details"
+        >
+          <dt class="slds-item_label slds-text-color_weak">Flow</dt>
+          <dd class="slds-item_detail">{flowLabel}</dd>
+          <dt class="slds-item_label slds-text-color_weak">Status</dt>
+          <dd class="slds-item_detail">{flowStatus}</dd>
+          <dt class="slds-item_label slds-text-color_weak">Runs</dt>
+          <dd class="slds-item_detail">{triggerText}</dd>
+          <dt class="slds-item_label slds-text-color_weak">Trigger object</dt>
+          <dd class="slds-item_detail">{triggerObjectText}</dd>
+          <dt class="slds-item_label slds-text-color_weak">
+            Only when updated to meet conditions
+          </dt>
+          <dd class="slds-item_detail">{onlyWhenUpdatedText}</dd>
+        </dl>
+      </div>
+    </lightning-card>
+  </template>
+</template>

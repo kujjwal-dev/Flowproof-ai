@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Conditions_Read__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description
+  >True when the Flow's entry conditions could be read.</description>
+    <externalId>false</externalId>
+    <label>Conditions Read</label>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Category__c</fullName>
+    <description>Strength of the evidence behind the finding.</description>
+    <externalId>false</externalId>
+    <label>Evidence</label>
+    <required>false</required>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>CONFIRMED</fullName>
+                <default>false</default>
+                <label>Confirmed by evidence</label>
+            </value>
+            <value>
+                <fullName>SUPPORTED_HYPOTHESIS</fullName>
+                <default>false</default>
+                <label>Supported hypothesis</label>
+            </value>
+            <value>
+                <fullName>INSUFFICIENT_EVIDENCE</fullName>
+                <default>false</default>
+                <label>Insufficient evidence</label>
+            </value>
+            <value>
+                <fullName>UNSUPPORTED</fullName>
+                <default>false</default>
+                <label>Unsupported analysis</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

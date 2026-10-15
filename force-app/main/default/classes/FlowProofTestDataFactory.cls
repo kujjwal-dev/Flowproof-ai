@@ -6,6 +6,7 @@
 @IsTest
 public class FlowProofTestDataFactory {
     private static final String MINIMUM_ACCESS_PROFILE = 'Minimum Access - Salesforce';
+    private static final String STANDARD_USER_PROFILE = 'Standard User';
 
     /**
      * Builds (and optionally inserts) a synthetic Opportunity.
@@ -34,7 +35,33 @@ public class FlowProofTestDataFactory {
      * @return the user
      */
     public static User createMinimumAccessUser() {
-        Profile minimumAccess = [SELECT Id FROM Profile WHERE Name = :MINIMUM_ACCESS_PROFILE WITH SYSTEM_MODE LIMIT 1];
+        return insertUser(MINIMUM_ACCESS_PROFILE);
+    }
+
+    /**
+     * Inserts a Standard User holding the FlowProof_User permission set, as a real FlowProof user
+     * would. Proves that the shipped permission set grants what FlowProof needs.
+     * Call inside System.runAs to keep setup DML separate from record DML.
+     * @return the user
+     */
+    public static User createFlowProofUser() {
+        User user = insertUser(STANDARD_USER_PROFILE);
+        PermissionSet flowProofUser = [
+            SELECT Id
+            FROM PermissionSet
+            WHERE Name = 'FlowProof_User'
+            WITH SYSTEM_MODE
+            LIMIT 1
+        ];
+        Database.insert(
+            new PermissionSetAssignment(AssigneeId = user.Id, PermissionSetId = flowProofUser.Id),
+            AccessLevel.SYSTEM_MODE
+        );
+        return user;
+    }
+
+    private static User insertUser(String profileName) {
+        Profile profile = [SELECT Id FROM Profile WHERE Name = :profileName WITH SYSTEM_MODE LIMIT 1];
         String unique = String.valueOf(Math.abs(Crypto.getRandomLong()));
         User user = new User(
             Alias = 'fptest',
@@ -43,7 +70,7 @@ public class FlowProofTestDataFactory {
             LastName = 'FlowProof Test',
             LanguageLocaleKey = 'en_US',
             LocaleSidKey = 'en_US',
-            ProfileId = minimumAccess.Id,
+            ProfileId = profile.Id,
             TimeZoneSidKey = 'America/Los_Angeles',
             Username = 'flowproof.test.' + unique + '@example.com'
         );

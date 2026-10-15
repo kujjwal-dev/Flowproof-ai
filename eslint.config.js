@@ -23,7 +23,9 @@ module.exports = defineConfig([
     files: ["**/lwc/**/*.test.js"],
     extends: [lwcConfig],
     rules: {
-      "@lwc/lwc/no-unexpected-wire-adapter-usages": "off"
+      "@lwc/lwc/no-unexpected-wire-adapter-usages": "off",
+      // Tests flush the rendering queue with setTimeout; the rule targets component code.
+      "@lwc/lwc/no-async-operation": "off"
     },
     languageOptions: {
       globals: {

@@ -81,6 +81,43 @@ public with sharing class FlowProofFlowCatalogService {
         return toSummary(views[0]);
     }
 
+    /**
+     * Lists the objects that have at least one record-triggered Flow, for the object picker.
+     * @return objects sorted by label, each with its number of record-triggered Flows
+     * @throws FlowProofException when the user cannot view Flow definitions
+     */
+    public List<FlowProofObjectOption> listObjectsWithRecordTriggeredFlows() {
+        Map<String, Integer> flowCountByDurableId = new Map<String, Integer>();
+        Map<String, String> labelByDurableId = new Map<String, String>();
+        List<FlowProofObjectOption> options = new List<FlowProofObjectOption>();
+        try {
+            for (FlowDefinitionView view : queries.findAllRecordTriggeredFlows()) {
+                String durableId = view.TriggerObjectOrEventId;
+                if (String.isBlank(durableId)) {
+                    continue;
+                }
+                flowCountByDurableId.put(durableId, (flowCountByDurableId.get(durableId) ?? 0) + 1);
+                labelByDurableId.put(durableId, view.TriggerObjectOrEventLabel);
+            }
+            if (flowCountByDurableId.isEmpty()) {
+                return options;
+            }
+            for (EntityDefinition entity : queries.findEntitiesByDurableId(flowCountByDurableId.keySet())) {
+                options.add(
+                    new FlowProofObjectOption(
+                        entity.QualifiedApiName,
+                        entity.Label ?? labelByDurableId.get(entity.DurableId),
+                        flowCountByDurableId.get(entity.DurableId)
+                    )
+                );
+            }
+        } catch (QueryException e) {
+            throw new FlowProofException(NO_ACCESS_MESSAGE, e);
+        }
+        options.sort();
+        return options;
+    }
+
     private static FlowProofFlowSummary toSummary(FlowDefinitionView view) {
         FlowProofFlowSummary summary = new FlowProofFlowSummary();
         summary.apiName = view.ApiName;
@@ -101,6 +138,32 @@ public with sharing class FlowProofFlowCatalogService {
      * SOQL for the catalog. Inherits the caller's sharing; every query runs in user mode.
      */
     public virtual inherited sharing class FlowQueries {
+        /**
+         * @return trigger object of every record-triggered Flow definition
+         */
+        public virtual List<FlowDefinitionView> findAllRecordTriggeredFlows() {
+            return [
+                SELECT TriggerObjectOrEventId, TriggerObjectOrEventLabel
+                FROM FlowDefinitionView
+                WHERE TriggerType IN :RECORD_TRIGGER_TYPES
+                WITH USER_MODE
+                LIMIT 2000
+            ];
+        }
+
+        /**
+         * @param durableIds EntityDefinition durable Ids (API names for standard objects)
+         * @return the matching entity definitions
+         */
+        public virtual List<EntityDefinition> findEntitiesByDurableId(Set<String> durableIds) {
+            return [
+                SELECT DurableId, QualifiedApiName, Label
+                FROM EntityDefinition
+                WHERE DurableId IN :durableIds
+                WITH USER_MODE
+            ];
+        }
+
         /**
          * @param objectApiName object API name
          * @return the matching EntityDefinition (at most one)

@@ -1,0 +1,78 @@
+<template>
+  <lightning-card title="Settings" icon-name="utility:settings">
+    <div class="slds-p-horizontal_medium">
+      <h3 class="slds-text-heading_small slds-m-bottom_x-small">
+        Connection to this org's API
+      </h3>
+      <p class="slds-m-bottom_small">
+        FlowProof reads Flow entry conditions through the FlowProof Org API
+        named credential, as you and with your permissions. Each user authorizes
+        once: Settings, External Credentials, FlowProof Org EC, Allow Access.
+      </p>
+      <div class="slds-is-relative slds-m-bottom_small">
+        <lightning-button
+          label="Test connection"
+          icon-name="utility:connected_apps"
+          onclick={handleTestConnection}
+          disabled={testing}
+          class="test-connection"
+        ></lightning-button>
+        <template lwc:if={testing}>
+          <lightning-spinner
+            alternative-text="Testing connection"
+            size="small"
+          ></lightning-spinner>
+        </template>
+      </div>
+      <template lwc:if={connection}>
+        <div
+          class="slds-media slds-m-bottom_medium connection-result"
+          role="status"
+        >
+          <div class="slds-media__figure">
+            <lightning-icon
+              icon-name={connectionIcon}
+              variant={connectionIconVariant}
+              size="small"
+              alternative-text={connectionHeadline}
+            ></lightning-icon>
+          </div>
+          <div class="slds-media__body">
+            <p class="slds-text-title_bold connection-headline">
+              {connectionHeadline}
+            </p>
+            <p class="connection-message">{connection.message}</p>
+          </div>
+        </div>
+      </template>
+      <template lwc:if={connectionError}>
+        <div
+          class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_medium connection-error"
+          role="alert"
+        >
+          <span class="slds-assistive-text">Error</span>
+          <h2>{connectionError}</h2>
+        </div>
+      </template>
+
+      <h3 class="slds-text-heading_small slds-m-bottom_x-small">
+        AI explanations
+      </h3>
+      <template lwc:if={settings}>
+        <dl class="slds-list_horizontal slds-wrap settings-list">
+          <dt class="slds-item_label slds-text-color_weak">Status</dt>
+          <dd class="slds-item_detail ai-status">{aiStatus}</dd>
+          <dt class="slds-item_label slds-text-color_weak">Model</dt>
+          <dd class="slds-item_detail">{aiModel}</dd>
+        </dl>
+        <p class="slds-text-body_small slds-text-color_weak slds-m-top_x-small">
+          Investigation results never depend on AI. Admins change these settings
+          in Setup, Custom Metadata Types, FlowProof Setting, Default.
+        </p>
+      </template>
+      <template lwc:if={settingsError}>
+        <p class="slds-text-color_error settings-error">{settingsError}</p>
+      </template>
+    </div>
+  </lightning-card>
+</template>

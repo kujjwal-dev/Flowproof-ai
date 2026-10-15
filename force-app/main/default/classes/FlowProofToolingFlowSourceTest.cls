@@ -134,6 +134,29 @@ private class FlowProofToolingFlowSourceTest {
         }
     }
 
+    @IsTest
+    static void shouldReportNotConfiguredWhenConnectionTestCalloutFails() {
+        Test.setMock(HttpCalloutMock.class, new FailingMock());
+
+        Test.startTest();
+        FlowProofConnectionStatus status = new FlowProofToolingFlowSource().testConnection();
+        Test.stopTest();
+
+        Assert.areEqual('NOT_CONFIGURED', status.status, 'A failed callout means the setup is incomplete');
+        Assert.isFalse(status.connected, 'Not connected');
+    }
+
+    @IsTest
+    static void shouldReportUnavailableWhenConnectionTestGetsServerError() {
+        Test.setMock(HttpCalloutMock.class, new RecordingMock(503, 'Service Unavailable'));
+
+        Test.startTest();
+        FlowProofConnectionStatus status = new FlowProofToolingFlowSource().testConnection();
+        Test.stopTest();
+
+        Assert.areEqual('UNAVAILABLE', status.status, 'Server errors mean temporarily unavailable');
+    }
+
     // ─── Helpers ─────────────────────────────────────────────────────────
 
     /**

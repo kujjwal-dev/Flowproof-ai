@@ -110,7 +110,45 @@ private class FlowProofFlowCatalogServiceTest {
         }
     }
 
+    @IsTest
+    static void shouldListObjectsWithFlowCounts() {
+        FlowProofTestStubs.CatalogQueries queries = new FlowProofTestStubs.CatalogQueries();
+        queries.flows.add(FlowProofTestStubs.activeOpportunityFlow('Opportunity_Onboarding'));
+        queries.flows.add(FlowProofTestStubs.activeOpportunityFlow('Opportunity_Renewal'));
+        queries.entities.add(entity('Opportunity'));
+
+        Test.startTest();
+        List<FlowProofObjectOption> options = new FlowProofFlowCatalogService(queries)
+            .listObjectsWithRecordTriggeredFlows();
+        Test.stopTest();
+
+        Assert.areEqual(1, options.size(), 'Both Flows are on one object');
+        Assert.areEqual('Opportunity', options[0].apiName, 'The object API name comes from EntityDefinition');
+        Assert.areEqual(2, options[0].flowCount, 'Flows should be counted per object');
+    }
+
+    @IsTest
+    static void shouldListNoObjectsWhenNoFlows() {
+        Test.startTest();
+        List<FlowProofObjectOption> options = new FlowProofFlowCatalogService(new FlowProofTestStubs.CatalogQueries())
+            .listObjectsWithRecordTriggeredFlows();
+        Test.stopTest();
+
+        Assert.isTrue(options.isEmpty(), 'No Flows means no objects');
+    }
+
     // ─── Real queries (no stub) ──────────────────────────────────────────
+
+    @IsTest
+    static void shouldRunRealObjectListQuery() {
+        Test.startTest();
+        List<FlowProofObjectOption> options = new FlowProofFlowCatalogService().listObjectsWithRecordTriggeredFlows();
+        Test.stopTest();
+
+        for (FlowProofObjectOption option : options) {
+            Assert.isNotNull(option.apiName, 'Every option needs an API name');
+        }
+    }
 
     @IsTest
     static void shouldRunRealQueriesForExistingObject() {

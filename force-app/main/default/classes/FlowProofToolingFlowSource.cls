@@ -65,14 +65,47 @@ public with sharing class FlowProofToolingFlowSource implements FlowProofFlowDef
         return parser.parseStart(extractMetadataJson(response.getBody()));
     }
 
-    private static HttpResponse send(Id flowVersionId) {
-        String soql = 'SELECT Metadata FROM Flow WHERE Id = \'' + flowVersionId + '\'';
+    /**
+     * Checks whether the current user can call the org API through FlowProof_Org_API, with a
+     * minimal read-only Tooling query. Never throws; the status explains what to do.
+     * @return the connection status
+     */
+    public FlowProofConnectionStatus testConnection() {
+        try {
+            Integer status = query('SELECT Id FROM FlowDefinition LIMIT 1').getStatusCode();
+            if (status == 200) {
+                return new FlowProofConnectionStatus('CONNECTED', 'FlowProof can read Flow definitions as you.');
+            }
+            if (status == 401 || status == 403) {
+                return new FlowProofConnectionStatus(
+                    'NOT_AUTHORIZED',
+                    'The org API refused the request (HTTP ' + status + '). ' + AUTHORIZE_STEP
+                );
+            }
+            return new FlowProofConnectionStatus(
+                'UNAVAILABLE',
+                'The org API returned HTTP ' + status + '. Try again in a minute.'
+            );
+        } catch (CalloutException e) {
+            return new FlowProofConnectionStatus(
+                'NOT_CONFIGURED',
+                'FlowProof could not reach the org API through the FlowProof_Org_API named credential. ' +
+                AUTHORIZE_STEP
+            );
+        }
+    }
+
+    private static HttpResponse query(String soql) {
         HttpRequest request = new HttpRequest();
         request.setEndpoint(QUERY_PATH + EncodingUtil.urlEncode(soql, 'UTF-8'));
         request.setMethod('GET');
         request.setTimeout(TIMEOUT_MS);
+        return new Http().send(request);
+    }
+
+    private static HttpResponse send(Id flowVersionId) {
         try {
-            return new Http().send(request);
+            return query('SELECT Metadata FROM Flow WHERE Id = \'' + flowVersionId + '\'');
         } catch (CalloutException e) {
             FlowProofMetadataException failure = new FlowProofMetadataException(
                     'FlowProof could not reach the org API through the FlowProof_Org_API named credential. ' +

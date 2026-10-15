@@ -1,0 +1,47 @@
+<template>
+  <lightning-card
+    title="Recent investigations"
+    icon-name="utility:richtextbulletedlist"
+  >
+    <div slot="actions">
+      <lightning-button-icon
+        icon-name="utility:refresh"
+        alternative-text="Refresh"
+        title="Refresh"
+        onclick={handleRefresh}
+        class="refresh-button"
+      ></lightning-button-icon>
+    </div>
+    <div class="slds-p-horizontal_medium">
+      <template lwc:if={loading}>
+        <lightning-spinner
+          alternative-text="Loading investigations"
+          size="small"
+        ></lightning-spinner>
+      </template>
+      <template lwc:if={error}>
+        <div
+          class="slds-notify slds-notify_alert slds-alert_error history-error"
+          role="alert"
+        >
+          <span class="slds-assistive-text">Error</span>
+          <h2>{error}</h2>
+        </div>
+      </template>
+      <template lwc:if={isEmpty}>
+        <p class="slds-text-body_regular slds-p-vertical_medium empty-state">
+          No investigations yet. Run one from the New investigation tab.
+        </p>
+      </template>
+      <template lwc:if={hasRows}>
+        <lightning-datatable
+          key-field="investigationId"
+          data={rows}
+          columns={columns}
+          hide-checkbox-column
+          onrowaction={handleRowAction}
+        ></lightning-datatable>
+      </template>
+    </div>
+  </lightning-card>
+</template>

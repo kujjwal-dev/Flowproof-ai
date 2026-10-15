@@ -1,0 +1,137 @@
+<template>
+  <lightning-card title="New investigation" icon-name="utility:search">
+    <div class="slds-p-horizontal_medium">
+      <p class="slds-text-body_regular slds-m-bottom_medium">
+        Pick a record and the record-triggered Flow you expected to act on it.
+        FlowProof reads the Flow's entry conditions and the record's current
+        values, then explains what the evidence shows.
+      </p>
+
+      <template lwc:if={objectsLoading}>
+        <lightning-spinner
+          alternative-text="Loading objects"
+          size="small"
+        ></lightning-spinner>
+      </template>
+
+      <template lwc:if={objectsError}>
+        <div
+          class="slds-notify slds-notify_alert slds-alert_error objects-error"
+          role="alert"
+        >
+          <span class="slds-assistive-text">Error</span>
+          <h2>{objectsError}</h2>
+        </div>
+      </template>
+
+      <template lwc:if={showNoObjects}>
+        <div class="slds-illustration slds-illustration_small no-objects">
+          <p class="slds-text-body_regular">
+            No record-triggered Flows were found in this org. Create or activate
+            one, then come back.
+          </p>
+        </div>
+      </template>
+
+      <template lwc:if={showForm}>
+        <div class="slds-grid slds-wrap slds-gutters">
+          <div
+            class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+          >
+            <lightning-combobox
+              name="object"
+              data-id="object"
+              label="Object"
+              placeholder="Choose an object"
+              options={objectOptions}
+              value={objectApiName}
+              onchange={handleObjectChange}
+              field-level-help="Only objects that have record-triggered Flows are listed."
+              required
+            ></lightning-combobox>
+          </div>
+          <div
+            class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+          >
+            <template for:each={pickerObjects} for:item="pickerObject">
+              <lightning-record-picker
+                key={pickerObject}
+                label="Record"
+                placeholder="Search records"
+                object-api-name={pickerObject}
+                onchange={handleRecordChange}
+                required
+              ></lightning-record-picker>
+            </template>
+            <template lwc:if={noObjectChosen}>
+              <lightning-input
+                label="Record"
+                placeholder="Choose an object first"
+                disabled
+              ></lightning-input>
+            </template>
+          </div>
+          <div
+            class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+          >
+            <lightning-combobox
+              name="flow"
+              data-id="flow"
+              label="Flow"
+              placeholder={flowPlaceholder}
+              options={flowOptions}
+              value={flowApiName}
+              onchange={handleFlowChange}
+              disabled={flowPickerDisabled}
+              required
+            ></lightning-combobox>
+            <template lwc:if={flowsError}>
+              <p class="slds-text-color_error slds-m-top_xx-small flows-error">
+                {flowsError}
+              </p>
+            </template>
+          </div>
+          <div
+            class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
+          >
+            <lightning-textarea
+              name="expectedOutcome"
+              label="Expected outcome (optional)"
+              placeholder="For example: an onboarding Task should be created"
+              max-length="2000"
+              value={expectedOutcome}
+              onchange={handleOutcomeChange}
+            ></lightning-textarea>
+          </div>
+        </div>
+
+        <template lwc:if={runError}>
+          <div
+            class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small run-error"
+            role="alert"
+          >
+            <span class="slds-assistive-text">Error</span>
+            <h2>{runError}</h2>
+          </div>
+        </template>
+
+        <div class="slds-is-relative">
+          <lightning-button
+            variant="brand"
+            label="Investigate"
+            icon-name="utility:search"
+            onclick={handleInvestigate}
+            disabled={cannotInvestigate}
+            class="investigate-button"
+          ></lightning-button>
+          <template lwc:if={running}>
+            <lightning-spinner
+              alternative-text="Investigating"
+              size="small"
+            ></lightning-spinner>
+          </template>
+        </div>
+      </template>
+    </div>
+  </lightning-card>
+</template>

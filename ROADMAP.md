@@ -16,10 +16,10 @@
 
 ## Phase 2 — Application foundation
 
-- [ ] Custom objects: Investigation, Finding (and Evidence if justified)
-- [ ] Custom Metadata: app settings (AI on/off, model, limits)
-- [ ] Permission sets: FlowProof User, FlowProof Admin
-- [ ] Lightning app with Dashboard, New Investigation, Results, and Settings
+- [x] Custom objects: Investigation, Finding (evidence kept in Result_JSON__c)
+- [x] Custom Metadata: FlowProof_Setting__mdt (AI off by default, model)
+- [x] Permission sets: FlowProof User, FlowProof Admin (tested with the real set)
+- [x] Lightning app: New investigation, Results, History, Settings (38 Jest tests)
 
 ## Phase 3 — Investigation engine (works without AI)
 

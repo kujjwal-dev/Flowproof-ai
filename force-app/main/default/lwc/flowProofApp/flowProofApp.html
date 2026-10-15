@@ -1,0 +1,76 @@
+<template>
+  <div class="slds-page-header slds-m-bottom_small">
+    <div class="slds-page-header__row">
+      <div class="slds-page-header__col-title">
+        <div class="slds-media">
+          <div class="slds-media__figure">
+            <lightning-icon
+              icon-name="custom:custom39"
+              alternative-text="FlowProof AI"
+            ></lightning-icon>
+          </div>
+          <div class="slds-media__body">
+            <h1 class="slds-page-header__title">FlowProof AI</h1>
+            <p class="slds-page-header__name-meta">
+              Understand why your Salesforce automation didn't behave as
+              expected.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <lightning-tabset active-tab-value={activeTab}>
+    <lightning-tab
+      label="New investigation"
+      value="investigate"
+      onactive={handleTabActive}
+    >
+      <c-flow-proof-new-investigation
+        oninvestigationcomplete={handleInvestigationComplete}
+      ></c-flow-proof-new-investigation>
+      <template lwc:if={latestResult}>
+        <div class="slds-m-top_medium latest-result">
+          <c-flow-proof-results result={latestResult}></c-flow-proof-results>
+        </div>
+      </template>
+    </lightning-tab>
+
+    <lightning-tab label="History" value="history" onactive={handleTabActive}>
+      <template lwc:if={viewedResult}>
+        <lightning-button
+          label="Back to history"
+          icon-name="utility:back"
+          onclick={handleBackToHistory}
+          class="slds-m-bottom_small back-button"
+        ></lightning-button>
+        <c-flow-proof-results result={viewedResult}></c-flow-proof-results>
+      </template>
+      <template lwc:else>
+        <template lwc:if={viewLoading}>
+          <lightning-spinner
+            alternative-text="Loading investigation"
+            size="small"
+          ></lightning-spinner>
+        </template>
+        <template lwc:if={viewError}>
+          <div
+            class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small view-error"
+            role="alert"
+          >
+            <span class="slds-assistive-text">Error</span>
+            <h2>{viewError}</h2>
+          </div>
+        </template>
+        <c-flow-proof-history
+          onviewinvestigation={handleViewInvestigation}
+        ></c-flow-proof-history>
+      </template>
+    </lightning-tab>
+
+    <lightning-tab label="Settings" value="settings" onactive={handleTabActive}>
+      <c-flow-proof-settings></c-flow-proof-settings>
+    </lightning-tab>
+  </lightning-tabset>
+</template>
