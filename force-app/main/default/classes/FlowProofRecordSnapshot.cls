@@ -12,6 +12,8 @@
 public with sharing class FlowProofRecordSnapshot {
     /** API name of the record's object. */
     public String objectApiName { get; set; }
+    /** Value of the record's name field (Name, CaseNumber, ...), when the user can read it. */
+    public String recordName { get; set; }
     /** Fields keyed by lower-case API name. */
     public Map<String, FieldValue> fieldsByName { get; set; }
 

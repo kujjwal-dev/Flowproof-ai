@@ -40,6 +40,17 @@ private class FlowProofDiagnosticEngineTest {
     }
 
     @IsTest
+    static void shouldExposeCategoryAndSeverityCodesForLightning() {
+        FlowProofFinding finding = find(
+            diagnose(contextWith(conditionsResult('NOT_SATISFIED', 'AND'))),
+            'CONDITIONS_NOT_MET'
+        );
+        // Apex enums arrive empty in Lightning components, so the String codes must be set.
+        Assert.areEqual('SUPPORTED_HYPOTHESIS', finding.categoryCode, 'Category code must mirror the enum');
+        Assert.areEqual('HIGH', finding.severityCode, 'Severity code must mirror the enum');
+    }
+
+    @IsTest
     static void shouldListHighSeverityFindingsFirst() {
         List<FlowProofFinding> findings = diagnose(contextWith(conditionsResult('NOT_SATISFIED', 'AND')));
         Assert.areEqual('CONDITIONS_NOT_MET', findings[0].ruleCode, 'The failing conditions come first');

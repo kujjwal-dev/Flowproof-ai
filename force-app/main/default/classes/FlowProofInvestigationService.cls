@@ -69,6 +69,7 @@ public with sharing class FlowProofInvestigationService {
             FlowProofRecordSnapshot snapshot = records.getSnapshot(request.objectApiName, request.recordId, fields);
             context.evaluation = new FlowProofConditionEvaluator().evaluate(context.start, snapshot);
             result.evaluation = context.evaluation;
+            result.recordName = snapshot.recordName;
         }
         result.findings = new FlowProofDiagnosticEngine().diagnose(context);
         return result;

@@ -53,6 +53,9 @@ private class FlowProofResultServiceTest {
                 loaded.findings[0].category,
                 'Enums should round-trip'
             );
+            Assert.areEqual('SUPPORTED_HYPOTHESIS', loaded.findings[0].categoryCode, 'Codes should round-trip');
+            Assert.areEqual('NOT_SATISFIED', loaded.evaluation.overallCode, 'Codes should round-trip');
+            Assert.areEqual('Acme Expansion', loaded.recordName, 'The record name should round-trip');
         }
     }
 

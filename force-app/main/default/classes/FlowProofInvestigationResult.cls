@@ -18,6 +18,9 @@ public with sharing class FlowProofInvestigationResult {
     /** The investigated record. */
     @AuraEnabled
     public Id recordId { get; set; }
+    /** The record's name, when the user can read it. */
+    @AuraEnabled
+    public String recordName { get; set; }
     /** The user's description of the expected outcome, if given. */
     @AuraEnabled
     public String expectedOutcome { get; set; }

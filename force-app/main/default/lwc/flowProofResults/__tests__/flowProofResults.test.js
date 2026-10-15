@@ -19,6 +19,7 @@ const RESULT = {
   investigationName: "INV-0001",
   objectApiName: "Opportunity",
   recordId: "006000000000001AAA",
+  recordName: "Acme Corporation - Expansion",
   expectedOutcome: "An onboarding Task should be created",
   investigatedAt: "2026-10-15T10:00:00.000Z",
   conditionsRead: true,
@@ -32,7 +33,7 @@ const RESULT = {
     triggerType: "RecordAfterSave"
   },
   evaluation: {
-    overall: "NOT_SATISFIED",
+    overallCode: "NOT_SATISFIED",
     logicType: "AND",
     overallReason:
       "All conditions must match, and condition(s) 3 do not match the current values.",
@@ -43,7 +44,7 @@ const RESULT = {
         operator: "EqualTo",
         expectedDisplay: "Closed Won",
         actualDisplay: "Closed Won",
-        outcome: "MATCH",
+        outcomeCode: "MATCH",
         reason: "The field equals Closed Won."
       },
       {
@@ -52,7 +53,7 @@ const RESULT = {
         operator: "GreaterThan",
         expectedDisplay: "10000",
         actualDisplay: "25000",
-        outcome: "MATCH",
+        outcomeCode: "MATCH",
         reason: "ok"
       },
       {
@@ -61,7 +62,7 @@ const RESULT = {
         operator: "EqualTo",
         expectedDisplay: "North America",
         actualDisplay: "(blank)",
-        outcome: "NO_MATCH",
+        outcomeCode: "NO_MATCH",
         reason: "The field is blank."
       }
     ]
@@ -69,16 +70,16 @@ const RESULT = {
   findings: [
     {
       ruleCode: "CONDITIONS_NOT_MET",
-      category: "SUPPORTED_HYPOTHESIS",
-      severity: "HIGH",
+      categoryCode: "SUPPORTED_HYPOTHESIS",
+      severityCode: "HIGH",
       title: "The record does not meet the Flow's entry conditions",
       detail: "Condition #3 fails.",
       recommendation: "Check the failing fields on the record."
     },
     {
       ruleCode: "EXECUTION_NOT_CONFIRMED",
-      category: "INSUFFICIENT_EVIDENCE",
-      severity: "INFO",
+      categoryCode: "INSUFFICIENT_EVIDENCE",
+      severityCode: "INFO",
       title: "Whether the Flow actually ran is not confirmed",
       detail: "No per-record history.",
       recommendation: "Use a debug log."
@@ -119,6 +120,13 @@ describe("c-flow-proof-results", () => {
     expect(
       element.shadowRoot.querySelector(".expected-outcome").textContent
     ).toContain("onboarding Task");
+  });
+
+  it("shows the record name instead of its Id", () => {
+    const element = render(RESULT);
+    expect(
+      element.shadowRoot.querySelector("lightning-card").textContent
+    ).toContain("Opportunity: Acme Corporation - Expansion");
   });
 
   it("always states that execution is not confirmed", () => {

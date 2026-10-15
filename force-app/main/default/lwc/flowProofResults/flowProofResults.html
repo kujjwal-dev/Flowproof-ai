@@ -23,7 +23,7 @@
           <div
             class="slds-col slds-text-body_small slds-text-color_weak slds-text-align_right"
           >
-            {result.objectApiName} record {result.recordId}
+            {result.objectApiName}: {recordLabel}
             <template lwc:if={result.investigatedAt}>
               &nbsp;·&nbsp;
               <lightning-formatted-date-time
@@ -40,7 +40,8 @@
 
         <template lwc:if={result.expectedOutcome}>
           <p class="slds-m-bottom_small expected-outcome">
-            <strong>Expected outcome:</strong> {result.expectedOutcome}
+            <strong class="slds-m-right_xx-small">Expected outcome:</strong>
+            {result.expectedOutcome}
           </p>
         </template>
 
@@ -58,7 +59,9 @@
             </div>
             <div class="slds-media__body">
               <p>
-                <strong>Historical execution: not confirmed.</strong>
+                <strong class="slds-m-right_xx-small"
+                  >Historical execution: not confirmed.</strong
+                >
                 Salesforce keeps no per-record history of record-triggered Flow
                 runs. These results use the Flow's current definition and the
                 record's current values, which may differ from the values at the
@@ -103,7 +106,8 @@
                     {finding.detail}
                   </p>
                   <p class="slds-m-top_xx-small finding-next-step">
-                    <strong>Next step:</strong> {finding.recommendation}
+                    <strong class="slds-m-right_xx-small">Next step:</strong>
+                    {finding.recommendation}
                   </p>
                 </div>
               </div>

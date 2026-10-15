@@ -27,26 +27,30 @@ export default class FlowProofResults extends NavigationMixin(
     return `${name}${this.flowLabel}`;
   }
 
+  get recordLabel() {
+    return this.result.recordName || this.result.recordId;
+  }
+
   get flowLabel() {
     return this.result.flow ? this.result.flow.label : "Unknown Flow";
   }
 
   get overall() {
     const overall = this.result.evaluation
-      ? this.result.evaluation.overall
+      ? this.result.evaluation.overallCode
       : "NOT_EVALUATED";
     return overallInfo(overall);
   }
 
   get findings() {
     return (this.result.findings || []).map((finding, index) => {
-      const severity = severityInfo(finding.severity);
+      const severity = severityInfo(finding.severityCode);
       return {
         ...finding,
         key: `${finding.ruleCode}-${index}`,
         severity,
         severityText: `${severity.label} severity`,
-        categoryInfo: categoryInfo(finding.category)
+        categoryInfo: categoryInfo(finding.categoryCode)
       };
     });
   }
@@ -78,7 +82,7 @@ export default class FlowProofResults extends NavigationMixin(
         condition.actualDisplay === null
           ? "Not read"
           : condition.actualDisplay,
-      outcomeInfo: outcomeInfo(condition.outcome)
+      outcomeInfo: outcomeInfo(condition.outcomeCode)
     }));
   }
 

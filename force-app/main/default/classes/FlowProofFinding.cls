@@ -31,12 +31,31 @@ public with sharing class FlowProofFinding implements Comparable {
     /** Stable rule identifier, e.g. CONDITIONS_NOT_MET. */
     @AuraEnabled
     public String ruleCode { get; set; }
-    /** Strength of the evidence. */
+    // Apex enums arrive empty in Lightning components, so each enum has a String code that
+    // Lightning reads. The enum setters keep the codes in sync (including on JSON deserialization).
+
+    /** Strength of the evidence. Lightning components read categoryCode instead. */
+    public Category category {
+        get;
+        set {
+            category = value;
+            categoryCode = value?.name();
+        }
+    }
+    /** Category name for Lightning components, e.g. SUPPORTED_HYPOTHESIS. */
     @AuraEnabled
-    public Category category { get; set; }
-    /** How much it matters. */
+    public String categoryCode { get; set; }
+    /** How much it matters. Lightning components read severityCode instead. */
+    public Severity severity {
+        get;
+        set {
+            severity = value;
+            severityCode = value?.name();
+        }
+    }
+    /** Severity name for Lightning components, e.g. HIGH. */
     @AuraEnabled
-    public Severity severity { get; set; }
+    public String severityCode { get; set; }
     /** One-line summary. */
     @AuraEnabled
     public String title { get; set; }

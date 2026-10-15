@@ -22,6 +22,7 @@ private class FlowProofRecordServiceTest {
         Assert.isTrue((Decimal) snapshot.getField('Amount').value == AMOUNT, 'Amount should be read');
         Assert.areEqual('CURRENCY', snapshot.getField('Amount').fieldType, 'Amount type should come from describe');
         Assert.areEqual('DATE', snapshot.getField('CloseDate').fieldType, 'Close date type should come from describe');
+        Assert.areEqual('Acme Expansion', snapshot.recordName, 'The record name should be read for display');
     }
 
     @IsTest

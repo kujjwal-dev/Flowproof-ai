@@ -28,9 +28,17 @@ public with sharing class FlowProofEvaluationResult {
     /** How conditions combine: NONE, AND, OR, CUSTOM or FORMULA. */
     @AuraEnabled
     public String logicType { get; set; }
-    /** Combined result for the current record values. */
+    /** Combined result for the current record values. Lightning components read overallCode instead. */
+    public OverallResult overall {
+        get;
+        set {
+            overall = value;
+            overallCode = value?.name();
+        }
+    }
+    /** Overall result name for Lightning components (Apex enums arrive empty there), e.g. NOT_SATISFIED. */
     @AuraEnabled
-    public OverallResult overall { get; set; }
+    public String overallCode { get; set; }
     /** Why the overall result is what it is. */
     @AuraEnabled
     public String overallReason { get; set; }
@@ -64,9 +72,17 @@ public with sharing class FlowProofEvaluationResult {
         /** Record value rendered for display; never set for inaccessible fields. */
         @AuraEnabled
         public String actualDisplay { get; set; }
-        /** Evaluation outcome. */
+        /** Evaluation outcome. Lightning components read outcomeCode instead. */
+        public ConditionOutcome outcome {
+            get;
+            set {
+                outcome = value;
+                outcomeCode = value?.name();
+            }
+        }
+        /** Outcome name for Lightning components (Apex enums arrive empty there), e.g. NO_MATCH. */
         @AuraEnabled
-        public ConditionOutcome outcome { get; set; }
+        public String outcomeCode { get; set; }
         /** Explanation of the outcome, including any assumption made. */
         @AuraEnabled
         public String reason { get; set; }

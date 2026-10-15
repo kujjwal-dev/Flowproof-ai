@@ -46,6 +46,24 @@ private class FlowProofConditionEvaluatorTest {
         );
     }
 
+    @IsTest
+    static void shouldExposeResultCodesForLightning() {
+        FlowProofFlowModel.FlowStart start = startWith(
+            'and',
+            new List<FlowProofFlowModel.Condition>{
+                condition(1, 'StageName', 'EqualTo', FlowProofFlowModel.stringValue('Closed Won')),
+                condition(2, 'Region__c', 'EqualTo', FlowProofFlowModel.stringValue('North America'))
+            }
+        );
+
+        FlowProofEvaluationResult result = evaluate(start, onboardingSnapshot());
+
+        // Apex enums arrive empty in Lightning components, so the String codes must be set.
+        Assert.areEqual('NOT_SATISFIED', result.overallCode, 'Overall code must mirror the enum');
+        Assert.areEqual('MATCH', result.conditions[0].outcomeCode, 'Outcome code must mirror the enum');
+        Assert.areEqual('NO_MATCH', result.conditions[1].outcomeCode, 'Outcome code must mirror the enum');
+    }
+
     // ─── AND ─────────────────────────────────────────────────────────────
 
     @IsTest

@@ -40,11 +40,33 @@ public with sharing class FlowProofRecordService {
             fieldApiNames ?? new Set<String>(),
             snapshot
         );
-        SObject record = queryRecord(objectDescribe.getName(), recordId, readableFields);
+        Schema.DescribeFieldResult nameField = readableNameField(objectDescribe);
+        List<Schema.DescribeFieldResult> queriedFields = new List<Schema.DescribeFieldResult>(readableFields);
+        if (nameField != null) {
+            queriedFields.add(nameField);
+        }
+        SObject record = queryRecord(objectDescribe.getName(), recordId, queriedFields);
         for (Schema.DescribeFieldResult field : readableFields) {
             snapshot.putValue(field.getName(), field.getType().name(), record.get(field.getName()));
         }
+        if (nameField != null) {
+            snapshot.recordName = String.valueOf(record.get(nameField.getName()));
+        }
         return snapshot;
+    }
+
+    /**
+     * @param objectDescribe the object's describe result
+     * @return the object's name field (Name, CaseNumber, ...) when the user can read it, else null
+     */
+    private static Schema.DescribeFieldResult readableNameField(Schema.DescribeSObjectResult objectDescribe) {
+        for (Schema.SObjectField token : objectDescribe.fields.getMap().values()) {
+            Schema.DescribeFieldResult field = token.getDescribe();
+            if (field.isNameField()) {
+                return field.isAccessible() ? field : null;
+            }
+        }
+        return null;
     }
 
     private static Schema.DescribeSObjectResult describeObject(String objectApiName) {
