@@ -23,7 +23,7 @@
 
 ## Phase 3 — Investigation engine (works without AI)
 
-- [ ] Flow metadata service: active version, trigger object/type, entry conditions
+- [x] Flow metadata service: catalog (FlowDefinitionView: activation, trigger object/type/order) + Tooling API source for entry conditions (tested, mocked callouts)
 - [ ] Record service: user-mode field retrieval and inaccessible-field reporting
 - [x] Condition evaluator, MVP operators: EqualTo, NotEqualTo, GreaterThan, LessThan, GreaterThanOrEqualTo, LessThanOrEqualTo, IsNull; AND / OR logic (tested, 74 tests)
 - [x] Explicit _Unsupported_ results for formulas, custom logic, relationships, and other operators
