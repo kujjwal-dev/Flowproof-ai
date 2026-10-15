@@ -26,12 +26,16 @@ public with sharing class FlowProofEvaluationResult {
     }
 
     /** How conditions combine: NONE, AND, OR, CUSTOM or FORMULA. */
+    @AuraEnabled
     public String logicType { get; set; }
     /** Combined result for the current record values. */
+    @AuraEnabled
     public OverallResult overall { get; set; }
     /** Why the overall result is what it is. */
+    @AuraEnabled
     public String overallReason { get; set; }
     /** One entry per condition, in metadata order. */
+    @AuraEnabled
     public List<ConditionResult> conditions { get; set; }
 
     /**
@@ -46,18 +50,25 @@ public with sharing class FlowProofEvaluationResult {
      */
     public with sharing class ConditionResult {
         /** 1-based condition number. */
+        @AuraEnabled
         public Integer index { get; set; }
         /** Field API name. */
+        @AuraEnabled
         public String field { get; set; }
         /** FlowRecordFilterOperator name. */
+        @AuraEnabled
         public String operator { get; set; }
         /** Comparison value rendered for display. */
+        @AuraEnabled
         public String expectedDisplay { get; set; }
         /** Record value rendered for display; never set for inaccessible fields. */
+        @AuraEnabled
         public String actualDisplay { get; set; }
         /** Evaluation outcome. */
+        @AuraEnabled
         public ConditionOutcome outcome { get; set; }
         /** Explanation of the outcome, including any assumption made. */
+        @AuraEnabled
         public String reason { get; set; }
 
         /**

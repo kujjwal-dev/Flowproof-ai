@@ -28,7 +28,7 @@
 - [x] Condition evaluator, MVP operators: EqualTo, NotEqualTo, GreaterThan, LessThan, GreaterThanOrEqualTo, LessThanOrEqualTo, IsNull; AND / OR logic (tested, 74 tests)
 - [x] Explicit _Unsupported_ results for formulas, custom logic, relationships, and other operators
 - [x] Flow metadata parser (Tooling `Flow.Metadata` JSON), tested against real metadata from the org
-- [ ] Findings with evidence categories, plus recommended next steps
+- [x] Findings with evidence categories, plus recommended next steps (diagnostic engine + investigation service, tested)
 
 ## Phase 4 — Gemini integration (optional layer)
 
