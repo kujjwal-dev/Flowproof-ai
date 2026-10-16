@@ -103,6 +103,43 @@ describe("c-flow-proof-app", () => {
     expect(labels).toEqual(["New investigation", "History", "Settings"]);
   });
 
+  it("shows the branded banner with the logo and highlights", () => {
+    const element = render();
+    const logo = element.shadowRoot.querySelector("img.hero-logo");
+    expect(logo.getAttribute("src")).toContain("FlowProofLogo");
+    expect(element.shadowRoot.querySelector(".hero-title").textContent).toBe(
+      "Why didn't my Flow run?"
+    );
+    expect(element.shadowRoot.querySelectorAll("li.hero-chip").length).toBe(4);
+  });
+
+  it("shows a check of all Flows and keeps it while a Flow is investigated", async () => {
+    const element = render();
+    element.shadowRoot
+      .querySelector("c-flow-proof-new-investigation")
+      .dispatchEvent(
+        new CustomEvent("sweepcomplete", {
+          detail: { objectApiName: "Opportunity", flowCount: 0, rows: [] }
+        })
+      );
+    await flushPromises();
+    const sweep = element.shadowRoot.querySelector(
+      ".latest-sweep c-flow-proof-sweep-results"
+    );
+    expect(sweep.sweep.objectApiName).toBe("Opportunity");
+
+    sweep.dispatchEvent(
+      new CustomEvent("investigationcomplete", { detail: RESULT })
+    );
+    await flushPromises();
+
+    expect(element.shadowRoot.querySelector(".latest-sweep")).not.toBeNull();
+    expect(
+      element.shadowRoot.querySelector(".latest-result c-flow-proof-results")
+        .result.investigationName
+    ).toBe("INV-0001");
+  });
+
   it("shows the result after an investigation completes", async () => {
     const element = render();
     expect(element.shadowRoot.querySelector(".latest-result")).toBeNull();

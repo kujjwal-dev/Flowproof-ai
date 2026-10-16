@@ -3,11 +3,16 @@ import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import getObjectOptions from "@salesforce/apex/FlowProofInvestigationController.getObjectOptions";
 import getFlows from "@salesforce/apex/FlowProofInvestigationController.getFlows";
 import runInvestigation from "@salesforce/apex/FlowProofInvestigationController.runInvestigation";
+import checkAllFlows from "@salesforce/apex/FlowProofInvestigationController.checkAllFlows";
 import { errorMessage, flowOptionLabel } from "c/flowProofFormat";
+
+/** Flow picker value that checks every record-triggered Flow on the object. */
+const ALL_FLOWS = "__ALL_FLOWS__";
 
 /**
  * Form for starting an investigation: object, record, Flow and optional expected outcome.
- * Fires `investigationcomplete` with the saved FlowProofInvestigationResult as detail.
+ * Fires `investigationcomplete` with the saved FlowProofInvestigationResult as detail, or, when
+ * "All Flows" is chosen, `sweepcomplete` with the unsaved FlowProofSweepResult as detail.
  */
 export default class FlowProofNewInvestigation extends LightningElement {
   objectApiName;
@@ -42,10 +47,19 @@ export default class FlowProofNewInvestigation extends LightningElement {
   @wire(getFlows, { objectApiName: "$objectApiName" })
   wiredFlows({ data, error }) {
     if (data) {
-      this.flowOptions = data.map((flow) => ({
+      const flows = data.map((flow) => ({
         label: flowOptionLabel(flow),
         value: flow.apiName
       }));
+      this.flowOptions = flows.length
+        ? [
+            {
+              label: `All Flows on this object (quick check of ${flows.length})`,
+              value: ALL_FLOWS
+            },
+            ...flows
+          ]
+        : [];
       this.flowsError = undefined;
     } else if (error) {
       this.flowOptions = [];
@@ -93,6 +107,22 @@ export default class FlowProofNewInvestigation extends LightningElement {
       : "No record-triggered Flows on this object";
   }
 
+  get isAllFlows() {
+    return this.flowApiName === ALL_FLOWS;
+  }
+
+  get showExpectedOutcome() {
+    return !this.isAllFlows;
+  }
+
+  get runLabel() {
+    return this.isAllFlows ? "Check all Flows" : "Investigate";
+  }
+
+  get runIcon() {
+    return this.isAllFlows ? "utility:list" : "utility:search";
+  }
+
   get cannotInvestigate() {
     return (
       this.running || !this.objectApiName || !this.recordId || !this.flowApiName
@@ -127,6 +157,10 @@ export default class FlowProofNewInvestigation extends LightningElement {
     }
     this.running = true;
     this.runError = undefined;
+    if (this.isAllFlows) {
+      await this.runSweep();
+      return;
+    }
     try {
       const result = await runInvestigation({
         objectApiName: this.objectApiName,
@@ -144,6 +178,20 @@ export default class FlowProofNewInvestigation extends LightningElement {
           variant: "success"
         })
       );
+    } catch (error) {
+      this.runError = errorMessage(error);
+    } finally {
+      this.running = false;
+    }
+  }
+
+  async runSweep() {
+    try {
+      const sweep = await checkAllFlows({
+        objectApiName: this.objectApiName,
+        recordId: this.recordId
+      });
+      this.dispatchEvent(new CustomEvent("sweepcomplete", { detail: sweep }));
     } catch (error) {
       this.runError = errorMessage(error);
     } finally {

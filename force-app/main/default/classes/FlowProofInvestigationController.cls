@@ -8,6 +8,8 @@ public with sharing class FlowProofInvestigationController {
 
     @TestVisible
     private static FlowProofInvestigationService investigationServiceOverride;
+    @TestVisible
+    private static FlowProofAiService aiServiceOverride;
 
     /**
      * @return objects that have record-triggered Flows, sorted by label
@@ -58,6 +60,49 @@ public with sharing class FlowProofInvestigationController {
             request.expectedOutcome = expectedOutcome;
             FlowProofInvestigationService service = investigationServiceOverride ?? new FlowProofInvestigationService();
             return new FlowProofResultService().save(service.investigate(request));
+        } catch (Exception e) {
+            throw handled(e);
+        }
+    }
+
+    /**
+     * Checks every record-triggered Flow on the object against one record. Not saved.
+     * @param objectApiName API name of the record's object
+     * @param recordId the record
+     * @return one row per checked Flow
+     */
+    @AuraEnabled
+    public static FlowProofSweepResult checkAllFlows(String objectApiName, Id recordId) {
+        try {
+            FlowProofInvestigationService service = investigationServiceOverride ?? new FlowProofInvestigationService();
+            return service.checkAllFlows(objectApiName, recordId);
+        } catch (Exception e) {
+            throw handled(e);
+        }
+    }
+
+    /**
+     * Returns a saved investigation's Gemini explanation, generating it when needed.
+     * @param investigationId FlowProof_Investigation__c Id
+     * @param regenerate true to replace an existing explanation
+     * @return the explanation
+     */
+    @AuraEnabled
+    public static FlowProofAiExplanation requestAiExplanation(Id investigationId, Boolean regenerate) {
+        try {
+            return (aiServiceOverride ?? new FlowProofAiService()).explain(investigationId, regenerate);
+        } catch (Exception e) {
+            throw handled(e);
+        }
+    }
+
+    /**
+     * @return whether Gemini is reachable with the configured key and model
+     */
+    @AuraEnabled
+    public static FlowProofConnectionStatus testAiConnection() {
+        try {
+            return (aiServiceOverride ?? new FlowProofAiService()).testConnection();
         } catch (Exception e) {
             throw handled(e);
         }

@@ -2,6 +2,7 @@ import { createElement } from "lwc";
 import FlowProofSettings from "c/flowProofSettings";
 import getSettings from "@salesforce/apex/FlowProofInvestigationController.getSettings";
 import testConnection from "@salesforce/apex/FlowProofInvestigationController.testConnection";
+import testAiConnection from "@salesforce/apex/FlowProofInvestigationController.testAiConnection";
 
 jest.mock(
   "@salesforce/apex/FlowProofInvestigationController.getSettings",
@@ -13,6 +14,14 @@ jest.mock(
 );
 jest.mock(
   "@salesforce/apex/FlowProofInvestigationController.testConnection",
+  () => ({ default: jest.fn() }),
+  {
+    virtual: true
+  }
+);
+
+jest.mock(
+  "@salesforce/apex/FlowProofInvestigationController.testAiConnection",
   () => ({ default: jest.fn() }),
   {
     virtual: true
@@ -107,5 +116,44 @@ describe("c-flow-proof-settings", () => {
     expect(
       element.shadowRoot.querySelector(".connection-error").textContent
     ).toContain("unexpected error");
+  });
+
+  it("says whether record values are sent to Gemini", async () => {
+    const element = render();
+    getSettings.emit({
+      aiEnabled: true,
+      aiModel: "gemini-3.8-flash",
+      aiSendFieldValues: false
+    });
+    await flushPromises();
+
+    expect(element.shadowRoot.querySelector(".ai-values").textContent).toBe(
+      "No, field values are hidden"
+    );
+    expect(
+      element.shadowRoot.querySelector(".ai-setup-steps").textContent
+    ).toContain("Never paste it into chat");
+  });
+
+  it("tests the Gemini connection", async () => {
+    testAiConnection.mockResolvedValue({
+      status: "NOT_AUTHORIZED",
+      connected: false,
+      message: "Gemini rejected the API key."
+    });
+    const element = render();
+
+    element.shadowRoot
+      .querySelector("lightning-button.test-ai-connection")
+      .click();
+    await flushPromises();
+
+    expect(testAiConnection).toHaveBeenCalledTimes(1);
+    expect(
+      element.shadowRoot.querySelector(".ai-connection-headline").textContent
+    ).toContain("Not authorized");
+    expect(
+      element.shadowRoot.querySelector(".ai-connection-message").textContent
+    ).toContain("rejected the API key");
   });
 });

@@ -106,9 +106,28 @@ Salesforce only reveals an app's consumer secret after an identity-verification 
 - `redirect_uri_mismatch`: the External Client App's callback URL must be exactly `<My Domain>/services/extidp/callback`.
 - Callouts fail with an access error: the user is missing the `FlowProof_Org_API_Access` permission set.
 
-## 7. Gemini API key (Phase 4)
+## 7. Gemini API key (optional AI explanations)
 
-Covered in Phase 4. The key will live only in a Salesforce External Credential principal. It never goes in this repo, `.env` files, or chat.
+AI explanations are off by default and FlowProof works fully without them. The key lives only in the `Gemini_API` External Credential in Salesforce. It never goes in this repo, `.env` files, email or chat.
+
+### What gets deployed (force-app)
+
+| Component                                            | Purpose                                                                                           |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| External Credential `Gemini_API`                     | Custom protocol; sends the header `x-goog-api-key: {!$Credential.Gemini_API.ApiKey}`              |
+| Principal `GeminiKey` (Named Principal)              | Holds the `ApiKey` authentication parameter, entered by an admin in Setup                         |
+| Named Credential `Gemini_API`                        | `https://generativelanguage.googleapis.com`; formulas in headers allowed; no Authorization header |
+| `FlowProof_User` / `FlowProof_Admin` permission sets | Grant access to the `Gemini_API-GeminiKey` principal                                              |
+| `FlowProof_Setting.Default`                          | `AI_Enabled__c` (off), `AI_Model__c` (`gemini-3.8-flash`), `AI_Send_Field_Values__c` (off)        |
+
+### Manual steps (the key can't be deployed)
+
+1. **Create a key** in [Google AI Studio](https://aistudio.google.com/apikey). Restrict it to the Generative Language API. A free-tier key is for synthetic data only (see [SECURITY.md](SECURITY.md#gemini-tier-and-data-use)).
+2. **Store it in Salesforce:** Setup → Named Credentials → **External Credentials** → **Gemini API** → Principals → **GeminiKey** → Edit → Authentication Parameters → Add: Name `ApiKey`, Value = the key → Save.
+3. **Test:** FlowProof AI app → Settings tab → **Test Gemini connection**. This reads the model's details and generates nothing.
+4. **Turn it on:** Setup → Custom Metadata Types → FlowProof Setting → Manage Records → **Default** → Edit → check **AI Explanations Enabled** → Save. Leave **Send Field Values to AI** off unless you've decided record values may leave Salesforce.
+
+To rotate the key, repeat step 2 with the new value, then delete the old key in Google AI Studio.
 
 ## Optional: Salesforce Development plugin for Claude Code
 

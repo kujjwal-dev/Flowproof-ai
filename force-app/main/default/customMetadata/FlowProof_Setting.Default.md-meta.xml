@@ -11,6 +11,10 @@
         <value xsi:type="xsd:boolean">false</value>
     </values>
     <values>
+        <field>AI_Send_Field_Values__c</field>
+        <value xsi:type="xsd:boolean">false</value>
+    </values>
+    <values>
         <field>AI_Model__c</field>
         <value xsi:type="xsd:string">gemini-3.8-flash</value>
     </values>

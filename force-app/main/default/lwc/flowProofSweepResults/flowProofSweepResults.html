@@ -1,0 +1,122 @@
+<template>
+  <template lwc:if={sweep}>
+    <lightning-card icon-name="utility:list">
+      <h2 slot="title" class="sweep-title">{title}</h2>
+      <div class="slds-p-horizontal_medium">
+        <p class="slds-m-bottom_small sweep-summary">{summaryText}</p>
+
+        <p
+          class="slds-text-body_small slds-text-color_weak slds-m-bottom_small execution-notice"
+        >
+          Quick check against the record's current values; not saved and not
+          proof that a Flow ran. Use Investigate for a full, saved result.
+        </p>
+
+        <template lwc:if={hasSkipped}>
+          <p class="slds-m-bottom_small slds-text-color_weak skipped-notice">
+            {skippedText}
+          </p>
+        </template>
+
+        <template lwc:if={runError}>
+          <div
+            class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small run-error"
+            role="alert"
+          >
+            <span class="slds-assistive-text">Error</span>
+            <h2>{runError}</h2>
+          </div>
+        </template>
+
+        <template lwc:if={hasRows}>
+          <div class="slds-scrollable_x">
+            <table
+              class="slds-table slds-table_bordered slds-table_cell-buffer sweep-table"
+              aria-label="Record-triggered Flows checked against the record"
+            >
+              <thead>
+                <tr class="slds-line-height_reset">
+                  <th scope="col"><div class="slds-truncate">Flow</div></th>
+                  <th scope="col">
+                    <div class="slds-truncate">Entry conditions</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate">What FlowProof found</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-truncate">Flow health</div>
+                  </th>
+                  <th scope="col">
+                    <div class="slds-assistive-text">Actions</div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <template for:each={rows} for:item="row">
+                  <tr key={row.flowApiName} class="sweep-row">
+                    <th scope="row" class="slds-cell-wrap">
+                      <div class="slds-text-title_bold">{row.flowLabel}</div>
+                      <div class="slds-text-body_small slds-text-color_weak">
+                        {row.triggerText}
+                      </div>
+                      <template lwc:if={row.inactive}>
+                        <lightning-badge
+                          label="Inactive"
+                          class="slds-badge_lightest slds-m-top_xx-small"
+                        ></lightning-badge>
+                      </template>
+                    </th>
+                    <td>
+                      <lightning-badge
+                        label={row.overall.label}
+                        class={row.overall.badgeClass}
+                        data-id="overall"
+                      ></lightning-badge>
+                    </td>
+                    <td class="slds-cell-wrap">
+                      <template lwc:if={row.topFinding}>
+                        <div class="top-finding">{row.topFinding.title}</div>
+                      </template>
+                      <template for:each={row.conditions} for:item="condition">
+                        <div
+                          key={condition.key}
+                          class="slds-text-body_small slds-text-color_weak unmatched-condition"
+                        >
+                          {condition.text}
+                        </div>
+                      </template>
+                    </td>
+                    <td class="slds-cell-wrap health-cell">
+                      <span title={row.healthTitle}>{row.healthText}</span>
+                    </td>
+                    <td>
+                      <lightning-button
+                        label="Investigate"
+                        data-flow={row.flowApiName}
+                        onclick={handleInvestigate}
+                        disabled={running}
+                        class="investigate-row"
+                      ></lightning-button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </template>
+        <template lwc:else>
+          <p class="slds-text-color_weak no-flows">
+            This object has no record-triggered Flows that you can see.
+          </p>
+        </template>
+
+        <template lwc:if={running}>
+          <lightning-spinner
+            alternative-text="Investigating"
+            size="small"
+          ></lightning-spinner>
+        </template>
+      </div>
+    </lightning-card>
+  </template>
+</template>

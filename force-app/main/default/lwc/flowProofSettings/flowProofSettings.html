@@ -56,22 +56,90 @@
       </template>
 
       <h3 class="slds-text-heading_small slds-m-bottom_x-small">
-        AI explanations
+        AI explanations (Gemini)
       </h3>
       <template lwc:if={settings}>
         <dl class="slds-list_horizontal slds-wrap settings-list">
           <dt class="slds-item_label slds-text-color_weak">Status</dt>
           <dd class="slds-item_detail ai-status">{aiStatus}</dd>
           <dt class="slds-item_label slds-text-color_weak">Model</dt>
-          <dd class="slds-item_detail">{aiModel}</dd>
+          <dd class="slds-item_detail ai-model">{aiModel}</dd>
+          <dt class="slds-item_label slds-text-color_weak">
+            Record values sent
+          </dt>
+          <dd class="slds-item_detail ai-values">{aiValuesText}</dd>
         </dl>
-        <p class="slds-text-body_small slds-text-color_weak slds-m-top_x-small">
-          Investigation results never depend on AI. Admins change these settings
-          in Setup, Custom Metadata Types, FlowProof Setting, Default.
-        </p>
       </template>
       <template lwc:if={settingsError}>
         <p class="slds-text-color_error settings-error">{settingsError}</p>
+      </template>
+      <p class="slds-m-top_x-small slds-m-bottom_small">
+        Optional. Gemini restates an investigation's findings in plain language;
+        investigation results never depend on it. Gemini never sees the record's
+        name or Id, and cannot change records or Flows.
+      </p>
+      <div class="slds-text-body_small slds-m-bottom_small ai-setup-steps">
+        <p class="slds-text-title_bold">Admin setup</p>
+        <ol class="slds-list_ordered">
+          <li>
+            Create an API key in Google AI Studio. Never paste it into chat,
+            email or code.
+          </li>
+          <li>
+            In Setup, open Named Credentials, then External Credentials, Gemini
+            API. Under Principals, edit GeminiKey and add the authentication
+            parameter ApiKey with the key as its value.
+          </li>
+          <li>
+            In Setup, open Custom Metadata Types, FlowProof Setting, Manage
+            Records, Default. Turn on AI Explanations Enabled.
+          </li>
+          <li>Test the connection below.</li>
+        </ol>
+      </div>
+      <div class="slds-is-relative slds-m-bottom_small">
+        <lightning-button
+          label="Test Gemini connection"
+          onclick={handleTestAiConnection}
+          disabled={aiTesting}
+          class="test-ai-connection"
+        ></lightning-button>
+        <template lwc:if={aiTesting}>
+          <lightning-spinner
+            alternative-text="Testing Gemini connection"
+            size="small"
+          ></lightning-spinner>
+        </template>
+      </div>
+      <template lwc:if={aiConnection}>
+        <div
+          class="slds-media slds-m-bottom_medium ai-connection-result"
+          role="status"
+        >
+          <div class="slds-media__figure">
+            <lightning-icon
+              icon-name={aiConnectionView.icon}
+              variant={aiConnectionView.variant}
+              size="small"
+              alternative-text={aiConnectionView.headline}
+            ></lightning-icon>
+          </div>
+          <div class="slds-media__body">
+            <p class="slds-text-title_bold ai-connection-headline">
+              {aiConnectionView.headline}
+            </p>
+            <p class="ai-connection-message">{aiConnection.message}</p>
+          </div>
+        </div>
+      </template>
+      <template lwc:if={aiConnectionError}>
+        <div
+          class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_medium ai-connection-error"
+          role="alert"
+        >
+          <span class="slds-assistive-text">Error</span>
+          <h2>{aiConnectionError}</h2>
+        </div>
       </template>
     </div>
   </lightning-card>

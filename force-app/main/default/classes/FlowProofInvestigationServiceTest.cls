@@ -151,6 +151,116 @@ private class FlowProofInvestigationServiceTest {
     }
 
     @IsTest
+    static void shouldRunHealthChecksWhenFullDefinitionIsRead() {
+        Opportunity opportunity = FlowProofTestDataFactory.createOpportunity('Health Test', 'Closed Won', 25000, true);
+        FlowProofTestStubs.CatalogQueries queries = new FlowProofTestStubs.CatalogQueries();
+        queries.flows.add(FlowProofTestStubs.activeOpportunityFlow('Opportunity_Onboarding'));
+        queries.entities.add(FlowProofTestStubs.entity('Opportunity'));
+        FlowProofTestStubs.Definitions definitions = new FlowProofTestStubs.Definitions(
+            FlowProofTestStubs.onboardingStart()
+        );
+        definitions.metadata = FlowProofTestStubs.metadataWithoutFaultPath();
+
+        Test.startTest();
+        FlowProofInvestigationResult result = new FlowProofInvestigationService(
+                new FlowProofFlowCatalogService(queries),
+                definitions,
+                new FlowProofRecordService()
+            )
+            .investigate(new FlowProofInvestigationRequest('Opportunity', opportunity.Id, 'Opportunity_Onboarding'));
+        Test.stopTest();
+
+        Assert.isTrue(result.healthChecked, 'Health checks run when the full definition is read');
+        Assert.isTrue(ruleCodes(result.healthFindings).contains('MISSING_FAULT_PATHS'), 'Health findings are kept');
+        Assert.isFalse(
+            ruleCodes(result.findings).contains('MISSING_FAULT_PATHS'),
+            'Health findings stay apart from the diagnosis'
+        );
+    }
+
+    @IsTest
+    static void shouldSkipHealthChecksWithoutFullDefinition() {
+        Opportunity opportunity = FlowProofTestDataFactory.createOpportunity('No Health', 'Closed Won', 25000, true);
+
+        FlowProofInvestigationResult result = investigate(
+            catalogWith(flowView(ACTIVE_ID, ACTIVE_ID, 'RecordAfterSave')),
+            new StubDefinitions(onboardingStart('Opportunity')),
+            opportunity.Id
+        );
+
+        Assert.isFalse(result.healthChecked, 'Without full metadata there is nothing to check');
+        Assert.isTrue(result.healthFindings.isEmpty(), 'No health findings without full metadata');
+    }
+
+    @IsTest
+    static void shouldCheckAllFlowsOnObjectAgainstOneRecord() {
+        Opportunity opportunity = FlowProofTestDataFactory.createOpportunity('Sweep Test', 'Closed Won', 25000, true);
+        FlowProofTestStubs.CatalogQueries queries = new FlowProofTestStubs.CatalogQueries();
+        queries.entities.add(FlowProofTestStubs.entity('Opportunity'));
+        queries.flows.add(FlowProofTestStubs.opportunityFlow('Archived_Flow', false));
+        queries.flows.add(FlowProofTestStubs.opportunityFlow('Opportunity_Onboarding', true));
+        queries.flows.add(FlowProofTestStubs.opportunityFlow('Discount_Approval', true));
+        FlowProofTestStubs.Definitions definitions = new FlowProofTestStubs.Definitions(
+            FlowProofTestStubs.onboardingStart()
+        );
+
+        Test.startTest();
+        FlowProofSweepResult sweep = new FlowProofInvestigationService(
+                new FlowProofFlowCatalogService(queries),
+                definitions,
+                new FlowProofRecordService()
+            )
+            .checkAllFlows('Opportunity', opportunity.Id);
+        Test.stopTest();
+
+        Assert.areEqual(3, sweep.flowCount, 'Every Flow on the object is counted');
+        Assert.areEqual(3, sweep.rows.size(), 'Every Flow is checked');
+        Assert.areEqual(3, definitions.requestedVersionIds.size(), 'Each definition is read once');
+        Assert.areEqual('Sweep Test', sweep.recordName, 'The record name is shown');
+        Assert.areEqual('Discount Approval', sweep.rows[0].flowLabel, 'Active Flows come first, by label');
+        Assert.areEqual('Archived Flow', sweep.rows[2].flowLabel, 'Inactive Flows come last');
+        Assert.areEqual('NOT_SATISFIED', sweep.rows[0].overallCode, 'Blank Type fails the conditions');
+        Assert.areEqual('Type', sweep.rows[0].unmatchedConditions[0].field, 'The failing condition is listed');
+        Assert.areEqual('CONDITIONS_NOT_MET', sweep.rows[0].topFinding.ruleCode, 'The top finding is shown');
+        Assert.areEqual('NO_ACTIVE_VERSION', sweep.rows[2].topFinding.ruleCode, 'The inactive Flow says so');
+        Assert.areEqual('NOT_CONFIRMED', sweep.historicalExecution, 'Execution is never confirmed');
+    }
+
+    @IsTest
+    static void shouldStopSweepAtFlowLimit() {
+        Opportunity opportunity = FlowProofTestDataFactory.createOpportunity('Limit Test', 'Closed Won', 25000, true);
+        FlowProofTestStubs.CatalogQueries queries = new FlowProofTestStubs.CatalogQueries();
+        queries.entities.add(FlowProofTestStubs.entity('Opportunity'));
+        Integer total = FlowProofInvestigationService.MAX_SWEEP_FLOWS + 2;
+        for (Integer i = 0; i < total; i++) {
+            queries.flows.add(FlowProofTestStubs.opportunityFlow('Flow_' + String.valueOf(i).leftPad(2, '0'), true));
+        }
+
+        Test.startTest();
+        FlowProofSweepResult sweep = new FlowProofInvestigationService(
+                new FlowProofFlowCatalogService(queries),
+                new FlowProofTestStubs.Definitions(FlowProofTestStubs.onboardingStart()),
+                new FlowProofRecordService()
+            )
+            .checkAllFlows('Opportunity', opportunity.Id);
+        Test.stopTest();
+
+        Assert.areEqual(total, sweep.flowCount, 'Every Flow is counted');
+        Assert.areEqual(FlowProofInvestigationService.MAX_SWEEP_FLOWS, sweep.rows.size(), 'Checks stop at the limit');
+        Assert.areEqual(2, sweep.skippedFlowLabels.size(), 'Skipped Flows are listed');
+    }
+
+    @IsTest
+    static void shouldRejectIncompleteSweep() {
+        try {
+            new FlowProofInvestigationService().checkAllFlows('Opportunity', null);
+            Assert.fail('Expected IllegalArgumentException for a sweep without a record');
+        } catch (IllegalArgumentException e) {
+            Assert.isTrue(e.getMessage().contains('record'), 'Message should say what is missing');
+        }
+    }
+
+    @IsTest
     static void shouldRejectIncompleteRequest() {
         try {
             new FlowProofInvestigationService()
@@ -162,6 +272,14 @@ private class FlowProofInvestigationServiceTest {
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────
+
+    private static Set<String> ruleCodes(List<FlowProofFinding> findings) {
+        Set<String> codes = new Set<String>();
+        for (FlowProofFinding finding : findings) {
+            codes.add(finding.ruleCode);
+        }
+        return codes;
+    }
 
     private static FlowProofInvestigationResult investigate(
         FlowProofFlowCatalogService catalog,
@@ -251,12 +369,12 @@ private class FlowProofInvestigationServiceTest {
             this.start = start;
         }
 
-        public FlowProofFlowModel.FlowStart getStart(Id flowVersionId) {
+        public FlowProofFlowDefinition getDefinition(Id flowVersionId) {
             requestedVersionId = flowVersionId;
             if (failure != null) {
                 throw failure;
             }
-            return start;
+            return new FlowProofFlowDefinition(start, null);
         }
     }
 }

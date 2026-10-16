@@ -1,0 +1,60 @@
+<template>
+  <template lwc:if={visible}>
+    <section class="slds-box slds-m-bottom_medium ai-explanation">
+      <div
+        class="slds-grid slds-grid_vertical-align-center slds-m-bottom_x-small"
+      >
+        <h3 class="slds-text-heading_small slds-col">AI explanation</h3>
+        <template lwc:if={showRetry}>
+          <lightning-button
+            variant="base"
+            label={retryLabel}
+            onclick={handleRetry}
+            class="retry-button"
+          ></lightning-button>
+        </template>
+      </div>
+
+      <template lwc:if={loading}>
+        <div class="slds-is-relative slds-p-around_large">
+          <lightning-spinner
+            alternative-text="Writing the explanation"
+            size="small"
+          ></lightning-spinner>
+        </div>
+      </template>
+
+      <template lwc:if={error}>
+        <p class="slds-text-color_error ai-error">{error}</p>
+      </template>
+
+      <template lwc:if={showExplanation}>
+        <p class="ai-summary">{current.summary}</p>
+
+        <template lwc:if={hasPoints}>
+          <ul class="slds-list_dotted slds-m-top_x-small ai-points">
+            <template for:each={points} for:item="point">
+              <li key={point.key} class="ai-point">{point.text}</li>
+            </template>
+          </ul>
+        </template>
+
+        <template lwc:if={hasNextSteps}>
+          <p class="slds-text-title_bold slds-m-top_small">Next steps</p>
+          <ol class="slds-list_ordered ai-steps">
+            <template for:each={steps} for:item="step">
+              <li key={step.key}>{step.text}</li>
+            </template>
+          </ol>
+        </template>
+
+        <p
+          class="slds-text-body_small slds-text-color_weak slds-m-top_small ai-disclaimer"
+        >
+          AI-generated from the findings above. Check important details against
+          them.
+        </p>
+      </template>
+    </section>
+  </template>
+</template>

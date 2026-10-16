@@ -2,7 +2,11 @@
 
 **Understand why your Salesforce automation didn't behave as expected.**
 
-FlowProof AI is a Salesforce-native troubleshooting app for admins and developers. Pick a record, pick the automation you expected to fire, and click **Investigate**. FlowProof inspects the automation's metadata and the record's values, evaluates supported conditions deterministically, and explains what the evidence does and does not show. Optionally, Google Gemini rewrites the findings in plain language.
+FlowProof AI is a Salesforce-native troubleshooting app for admins and developers. Pick a record, pick the automation you expected to fire, and click **Investigate**. FlowProof inspects the automation's metadata and the record's values, evaluates supported conditions deterministically, and explains what the evidence does and does not show.
+
+- **Check all Flows:** check every record-triggered Flow on the object against one record in one click.
+- **Flow health:** best-practice suggestions from the Flow's full definition, such as record operations inside loops, missing fault paths and hard-coded Ids. Suggestions only; FlowProof never changes a Flow.
+- **AI explanations (optional):** Google Gemini restates the findings in plain language, with record values hidden by default. Each point cites the findings it relies on.
 
 ## Core principle: evidence, not guesses
 
@@ -25,7 +29,8 @@ Current record values are not necessarily the values present when a Flow ran. A 
 | Phase 1 — Architecture                               | Done (Tooling API access verified)                     |
 | Phases 2–3 — App foundation and investigation engine | Done, deployed to flowproof-dev                        |
 | Phase 5 — MVP demo                                   | Done: verified end to end on real metadata and records |
-| Phases 4, 6–7 — Gemini, quality pass, CI/CD          | Planned                                                |
+| Phase 4 — Check all Flows, Flow health, Gemini       | Deployed to flowproof-dev; Gemini verified end to end  |
+| Phases 6–7 — Quality pass, CI/CD                     | Planned                                                |
 
 See [ROADMAP.md](ROADMAP.md) for the backlog.
 

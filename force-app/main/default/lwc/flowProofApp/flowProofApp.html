@@ -1,25 +1,56 @@
 <template>
-  <div class="slds-page-header slds-m-bottom_small">
-    <div class="slds-page-header__row">
-      <div class="slds-page-header__col-title">
-        <div class="slds-media">
-          <div class="slds-media__figure">
-            <lightning-icon
-              icon-name="custom:custom39"
-              alternative-text="FlowProof AI"
-            ></lightning-icon>
-          </div>
-          <div class="slds-media__body">
-            <h1 class="slds-page-header__title">FlowProof AI</h1>
-            <p class="slds-page-header__name-meta">
-              Understand why your Salesforce automation didn't behave as
-              expected.
-            </p>
-          </div>
-        </div>
+  <section class="hero slds-m-bottom_medium" aria-label="About FlowProof AI">
+    <svg
+      class="hero-art"
+      viewBox="0 0 480 200"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <g
+        fill="none"
+        stroke="#ffffff"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <rect x="20" y="80" width="90" height="40" rx="20"></rect>
+        <path d="M110 100 H170"></path>
+        <path d="M200 70 L230 100 L200 130 L170 100 Z"></path>
+        <path d="M230 100 H270 V50 H310"></path>
+        <path d="M270 100 V150 H310"></path>
+        <rect x="310" y="30" width="100" height="40" rx="8"></rect>
+        <rect x="310" y="130" width="100" height="40" rx="8"></rect>
+        <path d="M410 50 H436"></path>
+        <circle cx="452" cy="50" r="16"></circle>
+        <path d="M444 50 L450 56 L461 44"></path>
+      </g>
+    </svg>
+    <div class="hero-content">
+      <img class="hero-logo" src={logoUrl} alt="FlowProof AI logo" />
+      <div>
+        <p class="hero-eyebrow">Flow troubleshooting, with evidence</p>
+        <h1 class="hero-title">Why didn't my Flow run?</h1>
+        <p class="hero-subtitle">
+          Pick a record. FlowProof checks your record-triggered Flows against
+          it, labels every conclusion with its evidence, and suggests what to
+          fix. It is read-only: it never changes your data or your Flows.
+        </p>
+        <ul class="hero-chips">
+          <template for:each={highlights} for:item="highlight">
+            <li key={highlight.label} class="hero-chip">
+              <lightning-icon
+                icon-name={highlight.icon}
+                size="xx-small"
+                variant="inverse"
+                alternative-text=""
+              ></lightning-icon>
+              <span>{highlight.label}</span>
+            </li>
+          </template>
+        </ul>
       </div>
     </div>
-  </div>
+  </section>
 
   <lightning-tabset active-tab-value={activeTab}>
     <lightning-tab
@@ -29,7 +60,16 @@
     >
       <c-flow-proof-new-investigation
         oninvestigationcomplete={handleInvestigationComplete}
+        onsweepcomplete={handleSweepComplete}
       ></c-flow-proof-new-investigation>
+      <template lwc:if={latestSweep}>
+        <div class="slds-m-top_medium latest-sweep">
+          <c-flow-proof-sweep-results
+            sweep={latestSweep}
+            oninvestigationcomplete={handleSweepInvestigation}
+          ></c-flow-proof-sweep-results>
+        </div>
+      </template>
       <template lwc:if={latestResult}>
         <div class="slds-m-top_medium latest-result">
           <c-flow-proof-results result={latestResult}></c-flow-proof-results>

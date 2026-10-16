@@ -130,6 +130,53 @@ private class FlowProofResultServiceTest {
         }
     }
 
+    @IsTest
+    static void shouldLoadResultSavedBeforeHealthChecks() {
+        System.runAs(flowProofUser()) {
+            FlowProofInvestigationResult saved = new FlowProofResultService().save(investigateAcme());
+            // Schema version 1 had no health fields; serialization follows declaration order.
+            String versionOne = JSON.serialize(saved)
+                .replace('"healthChecked":false,', '')
+                .replace('"healthFindings":[],', '')
+                .replace('"schemaVersion":2', '"schemaVersion":1');
+            Assert.isFalse(versionOne.contains('health'), 'The test JSON should have no health fields');
+            Database.update(
+                new FlowProof_Investigation__c(Id = saved.investigationId, Result_JSON__c = versionOne),
+                AccessLevel.SYSTEM_MODE
+            );
+
+            Test.startTest();
+            FlowProofInvestigationResult loaded = new FlowProofResultService().load(saved.investigationId);
+            Test.stopTest();
+
+            Assert.isFalse(loaded.healthChecked, 'Old results were not health checked');
+            Assert.isNotNull(loaded.healthFindings, 'Old results get an empty health list');
+            Assert.isNull(loaded.aiExplanation, 'No AI explanation was requested');
+        }
+    }
+
+    @IsTest
+    static void shouldStoreAiExplanationApartFromResult() {
+        System.runAs(flowProofUser()) {
+            FlowProofInvestigationResult saved = new FlowProofResultService().save(investigateAcme());
+            FlowProofAiExplanation explanation = new FlowProofAiExplanation();
+            explanation.summary = 'Type is blank.';
+
+            Test.startTest();
+            new FlowProofResultService().saveAiExplanation(saved.investigationId, explanation);
+            Test.stopTest();
+
+            FlowProof_Investigation__c row = [
+                SELECT Result_JSON__c, AI_Explanation__c
+                FROM FlowProof_Investigation__c
+                WHERE Id = :saved.investigationId
+                WITH USER_MODE
+            ];
+            Assert.isTrue(row.AI_Explanation__c.contains('Type is blank.'), 'The explanation is stored');
+            Assert.isFalse(row.Result_JSON__c.contains('Type is blank.'), 'The evidence JSON is unchanged');
+        }
+    }
+
     /**
      * Creates a FlowProof user; setup DML runs as the current user to avoid mixed-DML errors.
      * @return the user

@@ -3,12 +3,20 @@
     <lightning-card icon-name="utility:metrics">
       <h2 slot="title" class="results-title">{title}</h2>
       <div slot="actions">
-        <lightning-button
-          label="Open record"
-          icon-name="utility:new_window"
-          onclick={handleOpenRecord}
-          class="open-record"
-        ></lightning-button>
+        <lightning-button-group>
+          <template lwc:if={canExplain}>
+            <lightning-button
+              label="AI explanation"
+              onclick={handleExplain}
+              class="explain-button"
+            ></lightning-button>
+          </template>
+          <lightning-button
+            label="Open record"
+            onclick={handleOpenRecord}
+            class="open-record"
+          ></lightning-button>
+        </lightning-button-group>
       </div>
 
       <div class="slds-p-horizontal_medium">
@@ -45,75 +53,29 @@
           </p>
         </template>
 
-        <div
-          class="slds-scoped-notification slds-theme_info slds-m-bottom_medium execution-notice"
-          role="status"
+        <p
+          class="slds-text-body_small slds-text-color_weak slds-m-bottom_medium execution-notice"
         >
-          <div class="slds-media">
-            <div class="slds-media__figure">
-              <lightning-icon
-                icon-name="utility:info"
-                size="x-small"
-                alternative-text="Note"
-              ></lightning-icon>
-            </div>
-            <div class="slds-media__body">
-              <p>
-                <strong class="slds-m-right_xx-small"
-                  >Historical execution: not confirmed.</strong
-                >
-                Salesforce keeps no per-record history of record-triggered Flow
-                runs. These results use the Flow's current definition and the
-                record's current values, which may differ from the values at the
-                time of the save.
-              </p>
-            </div>
-          </div>
-        </div>
+          Based on the Flow's current setup and the record's current values.
+          Salesforce keeps no history of past Flow runs, so whether this Flow
+          ran is not confirmed.
+        </p>
 
         <h3 class="slds-text-heading_small slds-m-bottom_x-small">
           Findings ({findingCount})
         </h3>
-        <ul
-          class="slds-has-dividers_around-space slds-m-bottom_medium findings"
-        >
-          <template for:each={findings} for:item="finding">
-            <li key={finding.key} class="slds-item finding">
-              <div class="slds-media">
-                <div class="slds-media__figure">
-                  <lightning-icon
-                    icon-name={finding.severity.iconName}
-                    variant={finding.severity.iconVariant}
-                    size="small"
-                    alternative-text={finding.severityText}
-                  ></lightning-icon>
-                </div>
-                <div class="slds-media__body">
-                  <div
-                    class="slds-grid slds-wrap slds-grid_vertical-align-center"
-                  >
-                    <h4
-                      class="slds-text-heading_small slds-m-right_small finding-title"
-                    >
-                      {finding.title}
-                    </h4>
-                    <lightning-badge
-                      label={finding.categoryInfo.label}
-                      class={finding.categoryInfo.badgeClass}
-                    ></lightning-badge>
-                  </div>
-                  <p class="slds-m-top_xx-small finding-detail">
-                    {finding.detail}
-                  </p>
-                  <p class="slds-m-top_xx-small finding-next-step">
-                    <strong class="slds-m-right_xx-small">Next step:</strong>
-                    {finding.recommendation}
-                  </p>
-                </div>
-              </div>
-            </li>
-          </template>
-        </ul>
+        <div class="slds-m-bottom_medium">
+          <c-flow-proof-finding-list
+            findings={displayedFindings}
+            data-id="findings"
+            empty-text="No findings."
+          ></c-flow-proof-finding-list>
+        </div>
+
+        <c-flow-proof-ai-explanation
+          investigation-id={result.investigationId}
+          explanation={result.aiExplanation}
+        ></c-flow-proof-ai-explanation>
 
         <h3 class="slds-text-heading_small slds-m-bottom_x-small">
           Entry conditions
@@ -127,29 +89,14 @@
             >
               <thead>
                 <tr class="slds-line-height_reset">
+                  <th scope="col"><div class="slds-truncate">#</div></th>
+                  <th scope="col"><div class="slds-truncate">Field</div></th>
+                  <th scope="col"><div class="slds-truncate">Operator</div></th>
+                  <th scope="col"><div class="slds-truncate">Expected</div></th>
                   <th scope="col">
-                    <div class="slds-truncate" title="Number">#</div>
+                    <div class="slds-truncate">Current value</div>
                   </th>
-                  <th scope="col">
-                    <div class="slds-truncate" title="Field">Field</div>
-                  </th>
-                  <th scope="col">
-                    <div class="slds-truncate" title="Operator">Operator</div>
-                  </th>
-                  <th scope="col">
-                    <div class="slds-truncate" title="Expected">Expected</div>
-                  </th>
-                  <th scope="col">
-                    <div class="slds-truncate" title="Current value">
-                      Current value
-                    </div>
-                  </th>
-                  <th scope="col">
-                    <div class="slds-truncate" title="Result">Result</div>
-                  </th>
-                  <th scope="col">
-                    <div class="slds-truncate" title="Why">Why</div>
-                  </th>
+                  <th scope="col"><div class="slds-truncate">Result</div></th>
                 </tr>
               </thead>
               <tbody>
@@ -160,13 +107,19 @@
                     <td>{condition.operatorText}</td>
                     <td>{condition.expectedDisplay}</td>
                     <td>{condition.actualText}</td>
-                    <td>
+                    <td class="slds-cell-wrap">
                       <lightning-badge
                         label={condition.outcomeInfo.label}
                         class={condition.outcomeInfo.badgeClass}
                       ></lightning-badge>
+                      <template lwc:if={condition.note}>
+                        <div
+                          class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small condition-note"
+                        >
+                          {condition.note}
+                        </div>
+                      </template>
                     </td>
-                    <td class="slds-cell-wrap">{condition.reason}</td>
                   </tr>
                 </template>
               </tbody>
@@ -176,6 +129,18 @@
         <template lwc:else>
           <p class="slds-m-bottom_medium no-conditions">{noConditionsText}</p>
         </template>
+
+        <h3 class="slds-text-heading_small slds-m-bottom_x-small">
+          Flow health ({healthCount})
+        </h3>
+        <div class="slds-m-bottom_medium">
+          <c-flow-proof-finding-list
+            findings={healthFindings}
+            data-id="health"
+            empty-text={healthEmptyText}
+            next-step-label="Suggestion:"
+          ></c-flow-proof-finding-list>
+        </div>
 
         <h3 class="slds-text-heading_small slds-m-bottom_x-small">Flow</h3>
         <dl

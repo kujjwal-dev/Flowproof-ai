@@ -2,9 +2,10 @@
   <lightning-card title="New investigation" icon-name="utility:search">
     <div class="slds-p-horizontal_medium">
       <p class="slds-text-body_regular slds-m-bottom_medium">
-        Pick a record and the record-triggered Flow you expected to act on it.
-        FlowProof reads the Flow's entry conditions and the record's current
-        values, then explains what the evidence shows.
+        Pick a record and the record-triggered Flow you expected to act on it,
+        or choose All Flows to check every record-triggered Flow on the object
+        at once. FlowProof reads the Flows' entry conditions and the record's
+        current values, then explains what the evidence shows.
       </p>
 
       <template lwc:if={objectsLoading}>
@@ -92,6 +93,7 @@
             </template>
           </div>
           <div
+            lwc:if={showExpectedOutcome}
             class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small"
           >
             <lightning-textarea
@@ -118,8 +120,8 @@
         <div class="slds-is-relative">
           <lightning-button
             variant="brand"
-            label="Investigate"
-            icon-name="utility:search"
+            label={runLabel}
+            icon-name={runIcon}
             onclick={handleInvestigate}
             disabled={cannotInvestigate}
             class="investigate-button"

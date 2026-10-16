@@ -48,9 +48,18 @@ public with sharing class FlowProofInvestigationResult {
     /** Diagnostic findings, most important first. */
     @AuraEnabled
     public List<FlowProofFinding> findings { get; set; }
+    /** True when the Flow's full definition was read and its health checks ran. */
+    @AuraEnabled
+    public Boolean healthChecked { get; set; }
+    /** Flow health (best-practice) findings, most important first; suggestions only. */
+    @AuraEnabled
+    public List<FlowProofFinding> healthFindings { get; set; }
     /** Always NOT_CONFIRMED: Salesforce keeps no per-record run history for record-triggered Flows. */
     @AuraEnabled
     public String historicalExecution { get; set; }
+    /** Optional Gemini explanation, stored separately from this deterministic result; null when none. */
+    @AuraEnabled
+    public FlowProofAiExplanation aiExplanation { get; set; }
     /** When the investigation ran. */
     @AuraEnabled
     public Datetime investigatedAt { get; set; }
@@ -59,9 +68,11 @@ public with sharing class FlowProofInvestigationResult {
      * Creates an empty result (also used for deserialization).
      */
     public FlowProofInvestigationResult() {
-        this.schemaVersion = 1;
+        this.schemaVersion = 2;
         this.conditionsRead = false;
         this.findings = new List<FlowProofFinding>();
+        this.healthChecked = false;
+        this.healthFindings = new List<FlowProofFinding>();
         this.historicalExecution = 'NOT_CONFIRMED';
     }
 }

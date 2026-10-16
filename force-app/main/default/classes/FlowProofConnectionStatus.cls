@@ -1,8 +1,8 @@
 /**
- * Result of testing the FlowProof_Org_API connection for the current user.
+ * Result of testing a FlowProof connection (the org API or Gemini) for the current user.
  */
 public with sharing class FlowProofConnectionStatus {
-    /** True when the org API answered successfully. */
+    /** True when the service answered successfully. */
     @AuraEnabled
     public Boolean connected { get; set; }
     /** CONNECTED, NOT_AUTHORIZED, NOT_CONFIGURED or UNAVAILABLE. */

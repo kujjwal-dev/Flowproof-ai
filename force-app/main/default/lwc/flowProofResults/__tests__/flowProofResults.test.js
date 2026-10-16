@@ -1,5 +1,21 @@
 import { createElement } from "lwc";
 import FlowProofResults from "c/flowProofResults";
+import getSettings from "@salesforce/apex/FlowProofInvestigationController.getSettings";
+import requestAiExplanation from "@salesforce/apex/FlowProofInvestigationController.requestAiExplanation";
+
+jest.mock(
+  "@salesforce/apex/FlowProofInvestigationController.getSettings",
+  () => {
+    const { createApexTestWireAdapter } = require("@salesforce/sfdx-lwc-jest");
+    return { default: createApexTestWireAdapter(jest.fn()) };
+  },
+  { virtual: true }
+);
+jest.mock(
+  "@salesforce/apex/FlowProofInvestigationController.requestAiExplanation",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
 
 const mockNavigate = jest.fn();
 jest.mock("lightning/navigation", () => {
@@ -84,8 +100,27 @@ const RESULT = {
       detail: "No per-record history.",
       recommendation: "Use a debug log."
     }
+  ],
+  healthChecked: true,
+  healthFindings: [
+    {
+      ruleCode: "MISSING_FAULT_PATHS",
+      categoryCode: "CONFIRMED",
+      severityCode: "LOW",
+      title: "Some elements have no fault path",
+      detail: '"Create Task" (Create Records) has no fault path.',
+      recommendation: "Add a fault path."
+    }
   ]
 };
+
+function findingItems(element, listId) {
+  return element.shadowRoot
+    .querySelector(`c-flow-proof-finding-list[data-id="${listId}"]`)
+    .shadowRoot.querySelectorAll("li.finding");
+}
+
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 function render(result) {
   const element = createElement("c-flow-proof-results", {
@@ -138,8 +173,9 @@ describe("c-flow-proof-results", () => {
 
   it("lists findings with evidence category and next step", () => {
     const element = render(RESULT);
-    const findings = element.shadowRoot.querySelectorAll("li.finding");
-    expect(findings.length).toBe(2);
+    const findings = findingItems(element, "findings");
+    // "Not confirmed" is shown once, as the note under the header, not as a finding.
+    expect(findings.length).toBe(1);
     expect(findings[0].querySelector(".finding-title").textContent).toContain(
       "does not meet"
     );
@@ -152,6 +188,68 @@ describe("c-flow-proof-results", () => {
     expect(findings[0].querySelector("lightning-icon").alternativeText).toBe(
       "High severity"
     );
+  });
+
+  it("lists Flow health suggestions apart from the findings", () => {
+    const element = render(RESULT);
+    const health = findingItems(element, "health");
+    expect(health.length).toBe(1);
+    expect(health[0].querySelector(".finding-title").textContent).toContain(
+      "no fault path"
+    );
+    expect(health[0].querySelector(".finding-next-step").textContent).toContain(
+      "Suggestion:"
+    );
+  });
+
+  it("says when Flow health could not be checked", () => {
+    const element = render({
+      ...RESULT,
+      healthChecked: false,
+      healthFindings: []
+    });
+    const list = element.shadowRoot.querySelector(
+      'c-flow-proof-finding-list[data-id="health"]'
+    );
+    expect(list.shadowRoot.querySelector(".empty-text").textContent).toContain(
+      "not checked"
+    );
+  });
+
+  it("offers an AI explanation when AI is on", async () => {
+    requestAiExplanation.mockResolvedValue({ summary: "Region is blank." });
+    const element = render({
+      ...RESULT,
+      investigationId: "a00000000000001AAA"
+    });
+    expect(element.shadowRoot.querySelector(".explain-button")).toBeNull();
+
+    getSettings.emit({ aiEnabled: true });
+    await flushPromises();
+    const button = element.shadowRoot.querySelector(
+      "lightning-button.explain-button"
+    );
+    expect(button.label).toBe("AI explanation");
+    button.click();
+    await flushPromises();
+
+    expect(requestAiExplanation).toHaveBeenCalledWith({
+      investigationId: "a00000000000001AAA",
+      regenerate: false
+    });
+    expect(element.shadowRoot.querySelector(".explain-button")).toBeNull();
+  });
+
+  it("does not offer an AI explanation when one is stored", async () => {
+    const element = render({
+      ...RESULT,
+      investigationId: "a00000000000001AAA",
+      aiExplanation: { summary: "Stored." }
+    });
+    getSettings.emit({ aiEnabled: true });
+    await flushPromises();
+
+    expect(element.shadowRoot.querySelector(".explain-button")).toBeNull();
   });
 
   it("shows each condition with expected value, current value and result", () => {

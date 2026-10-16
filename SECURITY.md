@@ -22,12 +22,19 @@ FlowProof runs as the signed-in user and must never reveal anything that user ca
 
 AI explanations are **optional** and **off by default**. Deterministic investigation results never depend on Gemini.
 
-Before any request leaves Salesforce, a sanitization layer:
+**What is sent** (`FlowProofAiPromptBuilder`), only when a user clicks **Explain with Gemini** on a saved investigation:
 
-1. Sends only the fields referenced by evaluated conditions. No other record fields are sent.
-2. Replaces record IDs, names, emails, and phone numbers with placeholders.
-3. Sends condition results and metadata summaries, not raw records.
-4. Logs what was sent, as field names only, so admins can audit it.
+- The Flow's label, API name, trigger settings and entry conditions (field names, operators, and the Flow's own comparison values). This is metadata.
+- Each condition's outcome code (match, no match, ...), and FlowProof's findings and Flow health findings.
+- The user's "expected outcome" text, cut to 500 characters and marked as user text, not instructions.
+
+**What is never sent:** the record's Id or name, the investigation's Id, the user's identity, or any field the conditions don't reference. The record's **current field values** are replaced by `[hidden]`, both in the condition list and inside finding text, unless an admin turns on `AI_Send_Field_Values__c`.
+
+**What Gemini can do:** nothing but return text. FlowProof sends no tools, never executes model output, never changes records or Flows, and shows the answer as plain text labelled "not evidence".
+
+**Grounding:** every key point must cite the rule codes or condition refs it relies on. Points that cite nothing FlowProof found are dropped and counted (`FlowProofAiExplanation`). The deterministic result is never modified.
+
+**Storage:** the explanation is stored in `AI_Explanation__c`, separate from `Result_JSON__c`. Users have create and read access to investigations, not edit, so stored evidence can't be changed by hand. To store the explanation, `FlowProofResultService.saveAiExplanation` first confirms in user mode that the user can read the investigation, then writes only `AI_Explanation__c` in system mode. The class is `with sharing`, so the user must still have edit access through sharing (owners do).
 
 ### Gemini tier and data use
 
@@ -45,7 +52,7 @@ Source: [Gemini API Additional Terms of Service](https://ai.google.dev/gemini-ap
 1. **Free tier is for development with synthetic data only.** Demo records are invented, and no real customer org connects to a free-tier key.
 2. **Real customer orgs need a billed Google Cloud project.**
 3. **EEA, Switzerland, and UK:** the terms allow only Paid Services when an app is offered to users there.
-4. The sanitization layer runs regardless of tier.
+4. Record values stay hidden regardless of tier unless an admin deliberately turns on `AI_Send_Field_Values__c`; with a free-tier key, leave it off.
 
 ## Reporting a vulnerability
 

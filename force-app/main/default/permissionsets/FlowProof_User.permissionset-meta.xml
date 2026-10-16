@@ -10,6 +10,16 @@
     </classAccesses>
     <description
   >Run FlowProof AI investigations and see your own results. Also assign FlowProof Org API Access so FlowProof can read Flow definitions as you.</description>
+    <externalCredentialPrincipalAccesses>
+        <enabled>true</enabled>
+        <externalCredentialPrincipal
+    >Gemini_API-GeminiKey</externalCredentialPrincipal>
+    </externalCredentialPrincipalAccesses>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>FlowProof_Investigation__c.AI_Explanation__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
         <field>FlowProof_Investigation__c.Conditions_Read__c</field>

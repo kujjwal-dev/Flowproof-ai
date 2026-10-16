@@ -3,6 +3,7 @@ import FlowProofNewInvestigation from "c/flowProofNewInvestigation";
 import getObjectOptions from "@salesforce/apex/FlowProofInvestigationController.getObjectOptions";
 import getFlows from "@salesforce/apex/FlowProofInvestigationController.getFlows";
 import runInvestigation from "@salesforce/apex/FlowProofInvestigationController.runInvestigation";
+import checkAllFlows from "@salesforce/apex/FlowProofInvestigationController.checkAllFlows";
 
 jest.mock(
   "@salesforce/apex/FlowProofInvestigationController.getObjectOptions",
@@ -22,6 +23,14 @@ jest.mock(
 );
 jest.mock(
   "@salesforce/apex/FlowProofInvestigationController.runInvestigation",
+  () => ({ default: jest.fn() }),
+  {
+    virtual: true
+  }
+);
+
+jest.mock(
+  "@salesforce/apex/FlowProofInvestigationController.checkAllFlows",
   () => ({ default: jest.fn() }),
   {
     virtual: true
@@ -57,7 +66,7 @@ function change(element, selector, detail) {
     .dispatchEvent(new CustomEvent("change", { detail }));
 }
 
-async function fillForm(element) {
+async function fillForm(element, flowApiName = "Opportunity_Onboarding") {
   getObjectOptions.emit(OBJECTS);
   await flushPromises();
   change(element, 'lightning-combobox[data-id="object"]', {
@@ -68,7 +77,7 @@ async function fillForm(element) {
   await flushPromises();
   change(element, "lightning-record-picker", { recordId: RECORD_ID });
   change(element, 'lightning-combobox[data-id="flow"]', {
-    value: "Opportunity_Onboarding"
+    value: flowApiName
   });
   await flushPromises();
 }
@@ -137,6 +146,9 @@ describe("c-flow-proof-new-investigation", () => {
       'lightning-combobox[data-id="flow"]'
     );
     expect(flowPicker.options[0].label).toBe(
+      "All Flows on this object (quick check of 1)"
+    );
+    expect(flowPicker.options[1].label).toBe(
       "Opportunity Onboarding (Active, after save)"
     );
     expect(flowPicker.disabled).toBe(false);
@@ -197,6 +209,29 @@ describe("c-flow-proof-new-investigation", () => {
     expect(
       element.shadowRoot.querySelector(".run-error").textContent
     ).toContain("The record was not found");
+  });
+
+  it("checks all Flows on the object when All Flows is chosen", async () => {
+    checkAllFlows.mockResolvedValue({ flowCount: 1, rows: [] });
+    const element = render();
+    const handler = jest.fn();
+    element.addEventListener("sweepcomplete", handler);
+    await fillForm(element, "__ALL_FLOWS__");
+
+    const button = element.shadowRoot.querySelector(
+      "lightning-button.investigate-button"
+    );
+    expect(button.label).toBe("Check all Flows");
+    expect(element.shadowRoot.querySelector("lightning-textarea")).toBeNull();
+    button.click();
+    await flushPromises();
+
+    expect(checkAllFlows).toHaveBeenCalledWith({
+      objectApiName: "Opportunity",
+      recordId: RECORD_ID
+    });
+    expect(runInvestigation).not.toHaveBeenCalled();
+    expect(handler.mock.calls[0][0].detail.flowCount).toBe(1);
   });
 
   it("clears the record and Flow when the object changes", async () => {

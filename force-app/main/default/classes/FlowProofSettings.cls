@@ -11,6 +11,9 @@ public with sharing class FlowProofSettings {
     /** Gemini model code. */
     @AuraEnabled
     public String aiModel { get; set; }
+    /** True when the record's field values may be sent to Gemini; otherwise they are hidden. */
+    @AuraEnabled
+    public Boolean aiSendFieldValues { get; set; }
 
     /**
      * Reads the Default settings record.
@@ -21,6 +24,7 @@ public with sharing class FlowProofSettings {
         FlowProofSettings settings = new FlowProofSettings();
         settings.aiEnabled = record?.AI_Enabled__c == true;
         settings.aiModel = record?.AI_Model__c;
+        settings.aiSendFieldValues = record?.AI_Send_Field_Values__c == true;
         return settings;
     }
 }

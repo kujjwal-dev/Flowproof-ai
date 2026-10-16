@@ -32,9 +32,16 @@
 
 ## Phase 4 — Gemini integration (optional layer)
 
-- [ ] `Gemini_API` External Credential + Named Credential
-- [ ] Sanitizer, prompt builder, structured JSON response, validation
-- [ ] Callout mocks; failure modes: timeout, 429, malformed response
+- [x] `Gemini_API` External Credential + Named Credential, principal access in the FlowProof permission sets
+- [x] Prompt builder with record values hidden by default, structured JSON response, grounding of key points
+- [x] Callout mocks; failure modes: bad key, 403, 404 model, 429, 5xx, blocked, cut off, malformed response, unreachable credential
+- [x] Results screen "Explain with Gemini" / Regenerate; Settings "Test Gemini connection"
+- [x] Manual: admin stores the API key in Setup and turns AI on (see SETUP.md §7). Verified 2026-10-17: connection test Connected; a real explanation of INV-0009 cited only FlowProof findings (C1–C3, CONDITIONS_NOT_MET, EXECUTION_NOT_CONFIRMED) with record values hidden
+
+## Phase 4b — Check all Flows and Flow health
+
+- [x] "All Flows on this object" in New investigation: every record-triggered Flow checked against one record, with Investigate per Flow
+- [x] Flow health checks on full metadata (7 rules, suggest-only), shown on Results and summarized per Flow in Check all Flows
 
 ## Phase 5 — MVP demo
 

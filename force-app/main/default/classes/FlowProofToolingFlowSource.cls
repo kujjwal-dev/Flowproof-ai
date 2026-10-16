@@ -34,13 +34,32 @@ public with sharing class FlowProofToolingFlowSource implements FlowProofFlowDef
     }
 
     /**
-     * Fetches and parses the start element of one Flow version.
+     * Fetches one Flow version and returns its parsed start element with its full metadata.
+     * @param flowVersionId Id of the Flow version (key prefix 301)
+     * @return the definition
+     * @throws IllegalArgumentException when the Id is missing or not a Flow version Id
+     * @throws FlowProofMetadataException when the definition cannot be read; the reason says why
+     */
+    public FlowProofFlowDefinition getDefinition(Id flowVersionId) {
+        String metadataJson = fetchMetadataJson(flowVersionId);
+        return new FlowProofFlowDefinition(
+            parser.parseStart(metadataJson),
+            (Map<String, Object>) JSON.deserializeUntyped(metadataJson)
+        );
+    }
+
+    /**
+     * Fetches and parses only the start element of one Flow version.
      * @param flowVersionId Id of the Flow version (key prefix 301)
      * @return the parsed start element
      * @throws IllegalArgumentException when the Id is missing or not a Flow version Id
      * @throws FlowProofMetadataException when the definition cannot be read; the reason says why
      */
     public FlowProofFlowModel.FlowStart getStart(Id flowVersionId) {
+        return parser.parseStart(fetchMetadataJson(flowVersionId));
+    }
+
+    private static String fetchMetadataJson(Id flowVersionId) {
         if (flowVersionId == null || !String.valueOf(flowVersionId).startsWith(FLOW_VERSION_PREFIX)) {
             throw new IllegalArgumentException('A Flow version Id (prefix 301) is required.');
         }
@@ -62,7 +81,7 @@ public with sharing class FlowProofToolingFlowSource implements FlowProofFlowDef
                 )
                 .withReason(FlowProofMetadataException.Reason.UNAVAILABLE);
         }
-        return parser.parseStart(extractMetadataJson(response.getBody()));
+        return extractMetadataJson(response.getBody());
     }
 
     /**

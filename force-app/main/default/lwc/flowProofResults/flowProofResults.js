@@ -1,24 +1,48 @@
-import { LightningElement, api } from "lwc";
+import { LightningElement, api, wire } from "lwc";
 import { NavigationMixin } from "lightning/navigation";
+import getSettings from "@salesforce/apex/FlowProofInvestigationController.getSettings";
 import {
-  categoryInfo,
   operatorLabel,
   outcomeInfo,
   overallInfo,
   recordTriggerTypeLabel,
-  severityInfo,
   triggerTypeLabel
 } from "c/flowProofFormat";
 
+// Shown once, as the note under the Results header, instead of as a finding.
+const EXECUTION_NOT_CONFIRMED = "EXECUTION_NOT_CONFIRMED";
+// Outcomes whose meaning is clear from the table; others get their reason as a note.
+const SELF_EXPLANATORY = new Set(["MATCH", "NO_MATCH"]);
+
 /**
  * Displays one FlowProofInvestigationResult: overall outcome, the "execution not confirmed"
- * notice, findings with evidence categories and next steps, the condition table and Flow settings.
+ * notice, findings with evidence categories and next steps, the optional AI explanation, the
+ * condition table, Flow health suggestions and Flow settings.
  */
 export default class FlowProofResults extends NavigationMixin(
   LightningElement
 ) {
   /** FlowProofInvestigationResult from Apex. */
   @api result;
+
+  aiEnabled = false;
+  explainRequestedId;
+
+  @wire(getSettings)
+  wiredSettings({ data }) {
+    if (data) {
+      this.aiEnabled = data.aiEnabled === true;
+    }
+  }
+
+  get canExplain() {
+    return (
+      this.aiEnabled &&
+      Boolean(this.result.investigationId) &&
+      !this.result.aiExplanation &&
+      this.explainRequestedId !== this.result.investigationId
+    );
+  }
 
   get title() {
     const name = this.result.investigationName
@@ -42,21 +66,28 @@ export default class FlowProofResults extends NavigationMixin(
     return overallInfo(overall);
   }
 
-  get findings() {
-    return (this.result.findings || []).map((finding, index) => {
-      const severity = severityInfo(finding.severityCode);
-      return {
-        ...finding,
-        key: `${finding.ruleCode}-${index}`,
-        severity,
-        severityText: `${severity.label} severity`,
-        categoryInfo: categoryInfo(finding.categoryCode)
-      };
-    });
+  get displayedFindings() {
+    return (this.result.findings || []).filter(
+      (finding) => finding.ruleCode !== EXECUTION_NOT_CONFIRMED
+    );
   }
 
   get findingCount() {
-    return (this.result.findings || []).length;
+    return this.displayedFindings.length;
+  }
+
+  get healthFindings() {
+    return this.result.healthFindings || [];
+  }
+
+  get healthCount() {
+    return this.healthFindings.length;
+  }
+
+  get healthEmptyText() {
+    return this.result.healthChecked
+      ? "FlowProof's checks found no design issues in this Flow version."
+      : "Flow health was not checked: FlowProof could not read the Flow's full definition.";
   }
 
   get hasConditions() {
@@ -82,7 +113,8 @@ export default class FlowProofResults extends NavigationMixin(
         condition.actualDisplay === null
           ? "Not read"
           : condition.actualDisplay,
-      outcomeInfo: outcomeInfo(condition.outcomeCode)
+      outcomeInfo: outcomeInfo(condition.outcomeCode),
+      note: SELF_EXPLANATORY.has(condition.outcomeCode) ? "" : condition.reason
     }));
   }
 
@@ -130,6 +162,11 @@ export default class FlowProofResults extends NavigationMixin(
       return "Unknown";
     }
     return this.result.runsOnlyWhenUpdatedToMeetConditions ? "Yes" : "No";
+  }
+
+  handleExplain() {
+    this.explainRequestedId = this.result.investigationId;
+    this.template.querySelector("c-flow-proof-ai-explanation").generate(false);
   }
 
   handleOpenRecord() {

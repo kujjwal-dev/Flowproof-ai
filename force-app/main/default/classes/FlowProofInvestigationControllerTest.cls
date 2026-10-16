@@ -142,6 +142,60 @@ private class FlowProofInvestigationControllerTest {
     }
 
     @IsTest
+    static void shouldCheckAllFlowsOnObject() {
+        Opportunity opportunity = FlowProofTestDataFactory.createOpportunity('Sweep Test', 'Closed Won', 25000, true);
+        useStubbedInvestigation();
+
+        Test.startTest();
+        FlowProofSweepResult sweep = FlowProofInvestigationController.checkAllFlows('Opportunity', opportunity.Id);
+        Test.stopTest();
+
+        Assert.areEqual(1, sweep.rows.size(), 'The stubbed Flow should be checked');
+        Assert.areEqual('NOT_SATISFIED', sweep.rows[0].overallCode, 'Blank Type fails the conditions');
+    }
+
+    @IsTest
+    static void shouldShowValidationMessageForIncompleteSweep() {
+        try {
+            FlowProofInvestigationController.checkAllFlows('Opportunity', null);
+            Assert.fail('Expected AuraHandledException for a sweep without a record');
+        } catch (AuraHandledException e) {
+            Assert.isTrue(e.getMessage().contains('record'), 'Message should say what is missing: ' + e.getMessage());
+        }
+    }
+
+    @IsTest
+    static void shouldExplainThatAiIsOff() {
+        FlowProofInvestigationController.aiServiceOverride = new FlowProofAiService(
+            new FlowProofGeminiClient(),
+            new FlowProofResultService(),
+            FlowProofTestStubs.aiSettings(false)
+        );
+        try {
+            FlowProofInvestigationController.requestAiExplanation(null, false);
+            Assert.fail('Expected AuraHandledException while AI is turned off');
+        } catch (AuraHandledException e) {
+            Assert.isTrue(e.getMessage().contains('turned off'), 'Message should say AI is off: ' + e.getMessage());
+        }
+    }
+
+    @IsTest
+    static void shouldTestAiConnection() {
+        Test.setMock(HttpCalloutMock.class, new FlowProofTestStubs.FixedResponse(200, '{}'));
+        FlowProofInvestigationController.aiServiceOverride = new FlowProofAiService(
+            new FlowProofGeminiClient(),
+            new FlowProofResultService(),
+            FlowProofTestStubs.aiSettings(true)
+        );
+
+        Test.startTest();
+        FlowProofConnectionStatus status = FlowProofInvestigationController.testAiConnection();
+        Test.stopTest();
+
+        Assert.isTrue(status.connected, 'HTTP 200 means Gemini is reachable');
+    }
+
+    @IsTest
     static void shouldReturnSettingsWithAiOffByDefault() {
         Test.startTest();
         FlowProofSettings settings = FlowProofInvestigationController.getSettings();

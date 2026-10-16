@@ -10,6 +10,16 @@
     </classAccesses>
     <description
   >Everything in FlowProof User, plus view and delete all investigations. Also assign FlowProof Org API Access.</description>
+    <externalCredentialPrincipalAccesses>
+        <enabled>true</enabled>
+        <externalCredentialPrincipal
+    >Gemini_API-GeminiKey</externalCredentialPrincipal>
+    </externalCredentialPrincipalAccesses>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>FlowProof_Investigation__c.AI_Explanation__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
         <field>FlowProof_Investigation__c.Conditions_Read__c</field>

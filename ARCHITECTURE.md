@@ -60,12 +60,39 @@ FlowProofAiService                     optional, separate transaction
 7. **Persist** the Investigation, Findings, and result snapshot. DML comes last, after every callout.
 8. Return the result DTO.
 
-**Transaction 2 (optional): `requestAiExplanation(investigationId)`**
+Step 3 also keeps the full Flow metadata, and the **Flow health checks** (§3.2) run on it. Health findings are stored in `healthFindings`, apart from the diagnosis.
 
-1. Load the stored result, sanitize it, build the prompt, call Gemini, and validate the JSON.
-2. Save the AI explanation alongside the deterministic result, never mixed into it.
+**Transaction 2 (optional): `requestAiExplanation(investigationId, regenerate)`**
+
+1. Load the stored result in user mode. A stored explanation is returned unless `regenerate` is true.
+2. Build the prompt with record values hidden (§8.2, [SECURITY.md](SECURITY.md#external-ai-google-gemini)), call Gemini, then parse and ground the answer.
+3. Save the explanation in `AI_Explanation__c`, never mixed into `Result_JSON__c`.
 
 Splitting the work into two transactions keeps the deterministic result independent of Gemini latency and failures. It also respects Apex's "no callout after uncommitted DML" rule.
+
+### 3.1 Check all Flows: `checkAllFlows(objectApiName, recordId)`
+
+One click checks every record-triggered Flow on the record's object. Nothing is saved; each row has **Investigate** to run and save the full investigation for that Flow.
+
+1. Read the record once (no fields) to fail fast, before any callout, if the user can't see it.
+2. List the object's record-triggered Flows, active ones first.
+3. Read each Flow's definition (one callout each) and run its health checks. The run stops at 30 Flows or after 90 seconds of callouts, well inside Salesforce's 100-callout and 120-second limits; skipped Flows are listed.
+4. Read the record once more, with the union of every Flow's condition fields.
+5. Evaluate and diagnose each Flow against that one snapshot, and return one `FlowProofSweepRow` per Flow.
+
+### 3.2 Flow health checks (`FlowProofFlowHealthAnalyzer`)
+
+Best-practice checks on the full Flow metadata. They hold whichever record is saved, and they only suggest: FlowProof never changes a Flow. Each finding names the elements it's based on.
+
+| Rule                            | Evidence             | Severity                        | Fires when                                                                                                                                          |
+| ------------------------------- | -------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATA_OPERATION_IN_LOOP`        | Confirmed            | High                            | Get/Create/Update/Delete Records is reachable from a loop's "for each" path before it returns to the loop (fault paths not followed)                |
+| `SAME_RECORD_UPDATE_AFTER_SAVE` | Confirmed            | Medium                          | An after-save Flow updates `$Record`, or its own object filtered by `Id = $Record.Id`                                                               |
+| `NO_ENTRY_CONDITIONS`           | Confirmed            | Medium (Low if it only assigns) | No filters and no formula; names the first Decision as a candidate entry condition                                                                  |
+| `REPEATED_WORK_ON_EVERY_UPDATE` | Supported hypothesis | Medium                          | Runs on update with conditions, without "only when updated to meet" / Is Changed / `ISCHANGED` / `PRIORVALUE`, and creates records or calls actions |
+| `POSSIBLE_HARDCODED_IDS`        | Supported hypothesis | Medium                          | A value (not a name, label or description) contains a 15-character Id-shaped token, or an 18-character one with a valid checksum                    |
+| `MISSING_FAULT_PATHS`           | Confirmed            | Low                             | Record operations or actions have no fault connector                                                                                                |
+| `TRIGGER_ORDER_NOT_SET`         | Confirmed            | Low                             | The Flow is active, has no Trigger Order, and other active Flows run at the same point (same object, before or after save)                          |
 
 ## 4. Evidence model
 
@@ -122,11 +149,11 @@ _Unverified_ (needs tests against the platform):
 
 ## 6. Data model
 
-| Object                                                  | Purpose                              | Key fields                                                                                                                                                                                                                                                                                                             |
-| ------------------------------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `FlowProof_Investigation__c` (OWD **Private**)          | One run                              | `Target_Object__c`, `Target_Record_Id__c`, `Flow_Api_Name__c`, `Flow_Version_Id__c`, `Expected_Outcome__c`, `Status__c` (Running/Completed/Failed), `Overall_Result__c`, `Metadata_Source__c`, `Result_JSON__c` (versioned snapshot: conditions, values, evidence), `AI_Status__c`, `AI_Explanation__c`, `AI_Model__c` |
-| `FlowProof_Finding__c` (master-detail to Investigation) | Queryable findings for the dashboard | `Category__c`, `Severity__c`, `Rule_Code__c`, `Title__c`, `Detail__c`, `Recommendation__c`, `Sort_Order__c`                                                                                                                                                                                                            |
-| `FlowProof_Setting__mdt`                                | App configuration                    | `AI_Enabled__c` (default false), `AI_Model__c`, `AI_Timeout_Ms__c`, `AI_Max_Output_Tokens__c`, `Metadata_Source__c`                                                                                                                                                                                                    |
+| Object                                                  | Purpose                              | Key fields                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FlowProof_Investigation__c` (OWD **Private**)          | One run                              | `Target_Object__c`, `Target_Record_Id__c`, `Flow_Api_Name__c`, `Flow_Label__c`, `Flow_Version_Id__c`, `Expected_Outcome__c`, `Overall_Result__c`, `Conditions_Read__c`, `Top_Finding__c`, `Result_JSON__c` (versioned snapshot: conditions, values, findings, health findings; schema version 2), `AI_Explanation__c` (optional Gemini explanation as JSON, kept apart), `Finding_Count__c` |
+| `FlowProof_Finding__c` (master-detail to Investigation) | Queryable findings for the dashboard | `Category__c`, `Severity__c`, `Rule_Code__c`, `Title__c`, `Detail__c`, `Recommendation__c`, `Sort_Order__c`                                                                                                                                                                                                                                                                                 |
+| `FlowProof_Setting__mdt`                                | App configuration                    | `AI_Enabled__c` (default false), `AI_Model__c` (`gemini-3.8-flash`), `AI_Send_Field_Values__c` (default false)                                                                                                                                                                                                                                                                              |
 
 **Why there's no Evidence object yet.** Evidence is always read together with its investigation, and nothing queries it on its own. It lives in `Result_JSON__c`, which keeps the MVP at two custom objects. Feature 2 (investigation history and evidence references) can promote it to an object if needed.
 
@@ -175,18 +202,18 @@ If A isn't authorized for a user, FlowProof still lists candidate Flows from `Fl
   - External Credential `Gemini_API`, protocol Custom, Named Principal, with a custom header `x-goog-api-key: {!$Credential.Gemini_API.ApiKey}`.
   - Named Credential `Gemini_API`: Generate Authorization Header off, Allow Formulas in HTTP Header on.
   - The key itself is entered in Setup and can't be deployed.
-- **Request:**
-  - `systemInstruction`, `contents`.
-  - `generationConfig.responseFormat.text` = `{mimeType: application/json, schema}`.
-  - `thinkingConfig.thinkingLevel = "low"`.
-  - `maxOutputTokens` ≈ 4096.
-  - No `temperature`; it's ignored on 3.6+ and may return 400 on future models.
+- **Request** (`FlowProofGeminiClient`):
+  - `systemInstruction` (fixed rules in `FlowProofAiPromptBuilder`), one user `contents` entry with the facts as JSON.
+  - `generationConfig.responseMimeType = "application/json"` and `responseSchema` (Gemini Schema, uppercase types): `summary`, `keyPoints[{text, basedOn[]}]`, `nextSteps[]`, `caveats[]`. These are the keys in the `generateContent` reference examples (checked 2026-10-17).
+  - `thinkingConfig.thinkingLevel = "low"`, `maxOutputTokens = 4096`.
+  - No `temperature`; it's ignored on 3.6+ and may return 400 on future models. No `tools`.
 - **Response handling:**
   - Join the non-thought text parts.
-  - Require `finishReason = STOP` and no `promptFeedback.blockReason`.
-  - Validate the JSON against the expected keys. If it's invalid, save `AI_Status__c = Failed` with a reason.
-- **Retries:** none inside the transaction. Report 429/5xx as "try again"; report 400/403 as a configuration error.
-- **Timeout:** `setTimeout(120000)`, the maximum.
+  - Require `finishReason = STOP` (or absent) and no `promptFeedback.blockReason`.
+  - Parse the JSON (`FlowProofAiExplanation.fromModelJson`): require a summary, trim and cap every list and text, keep only key points that cite known rule codes or condition refs (`C1`, `C2`, ...). Failures are shown to the user and nothing is stored.
+- **Errors:** 400 with "API key" or 401/403 → key problem with the Setup path; 404 → unknown model; 429 → quota; 5xx → try again. No retries inside the transaction.
+- **Connection test:** `GET models/{model}` reads the model's details without generating.
+- **Timeout:** `setTimeout(60000)`.
 
 ## 9. Error handling
 
