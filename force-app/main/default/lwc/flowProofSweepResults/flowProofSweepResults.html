@@ -1,15 +1,102 @@
 <template>
-  <template lwc:if={sweep}>
+  <template lwc:if={displayed}>
     <lightning-card icon-name="utility:list">
       <h2 slot="title" class="sweep-title">{title}</h2>
+      <div slot="actions">
+        <template lwc:if={canSimulate}>
+          <lightning-button
+            label={whatIfButtonLabel}
+            onclick={handleToggleWhatIf}
+            class="what-if-toggle"
+          ></lightning-button>
+        </template>
+      </div>
       <div class="slds-p-horizontal_medium">
+        <template lwc:if={simulated}>
+          <div
+            class="slds-scoped-notification slds-theme_warning slds-m-bottom_small simulated-notice"
+            role="status"
+          >
+            <p>
+              <strong class="slds-m-right_xx-small"
+                >Simulated values, nothing was saved:</strong
+              >
+              {simulatedText}
+            </p>
+            <lightning-button
+              variant="base"
+              label="Back to current values"
+              onclick={handleShowCurrent}
+              class="show-current"
+            ></lightning-button>
+          </div>
+        </template>
+
         <p class="slds-m-bottom_small sweep-summary">{summaryText}</p>
+
+        <template lwc:if={showWhatIf}>
+          <div class="slds-box slds-m-bottom_small what-if-form">
+            <p class="slds-text-title_bold slds-m-bottom_x-small">
+              What if the record had these values?
+            </p>
+            <div class="slds-grid slds-wrap slds-gutters_small">
+              <template for:each={whatIfInputs} for:item="field">
+                <div
+                  key={field.apiName}
+                  class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_x-small"
+                >
+                  <template lwc:if={field.isPicklist}>
+                    <lightning-combobox
+                      label={field.label}
+                      options={field.choices}
+                      value={field.draft}
+                      data-field={field.apiName}
+                      onchange={handleWhatIfChange}
+                    ></lightning-combobox>
+                  </template>
+                  <template lwc:elseif={field.isCheckbox}>
+                    <lightning-input
+                      type="checkbox"
+                      label={field.label}
+                      checked={field.checked}
+                      data-field={field.apiName}
+                      onchange={handleWhatIfChange}
+                    ></lightning-input>
+                  </template>
+                  <template lwc:else>
+                    <lightning-input
+                      type={field.inputType}
+                      step="any"
+                      label={field.label}
+                      value={field.draft}
+                      data-field={field.apiName}
+                      onchange={handleWhatIfChange}
+                    ></lightning-input>
+                  </template>
+                </div>
+              </template>
+            </div>
+            <template lwc:if={whatIfError}>
+              <p
+                class="slds-text-color_error slds-m-bottom_x-small what-if-error"
+              >
+                {whatIfError}
+              </p>
+            </template>
+            <lightning-button
+              variant="brand"
+              label="Check with these values"
+              onclick={handleSimulate}
+              disabled={running}
+              class="simulate-button"
+            ></lightning-button>
+          </div>
+        </template>
 
         <p
           class="slds-text-body_small slds-text-color_weak slds-m-bottom_small execution-notice"
         >
-          Quick check against the record's current values; not saved and not
-          proof that a Flow ran. Use Investigate for a full, saved result.
+          {noticeText}
         </p>
 
         <template lwc:if={hasSkipped}>
@@ -46,9 +133,11 @@
                   <th scope="col">
                     <div class="slds-truncate">Flow health</div>
                   </th>
-                  <th scope="col">
-                    <div class="slds-assistive-text">Actions</div>
-                  </th>
+                  <template lwc:if={canInvestigate}>
+                    <th scope="col">
+                      <div class="slds-assistive-text">Actions</div>
+                    </th>
+                  </template>
                 </tr>
               </thead>
               <tbody>
@@ -89,15 +178,17 @@
                     <td class="slds-cell-wrap health-cell">
                       <span title={row.healthTitle}>{row.healthText}</span>
                     </td>
-                    <td>
-                      <lightning-button
-                        label="Investigate"
-                        data-flow={row.flowApiName}
-                        onclick={handleInvestigate}
-                        disabled={running}
-                        class="investigate-row"
-                      ></lightning-button>
-                    </td>
+                    <template lwc:if={canInvestigate}>
+                      <td>
+                        <lightning-button
+                          label="Investigate"
+                          data-flow={row.flowApiName}
+                          onclick={handleInvestigate}
+                          disabled={running}
+                          class="investigate-row"
+                        ></lightning-button>
+                      </td>
+                    </template>
                   </tr>
                 </template>
               </tbody>
@@ -112,7 +203,7 @@
 
         <template lwc:if={running}>
           <lightning-spinner
-            alternative-text="Investigating"
+            alternative-text="Working"
             size="small"
           ></lightning-spinner>
         </template>

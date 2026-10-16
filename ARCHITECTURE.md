@@ -80,6 +80,10 @@ One click checks every record-triggered Flow on the record's object. Nothing is 
 4. Read the record once more, with the union of every Flow's condition fields.
 5. Evaluate and diagnose each Flow against that one snapshot, and return one `FlowProofSweepRow` per Flow.
 
+**What if** (`simulateAllFlows(objectApiName, recordId, values)`): the same check, but after the record is read, the typed-in values replace the real ones in the in-memory snapshot (`FlowProofRecordService.applyWhatIfValues`). Each value is converted to the field's type (`FlowProofWhatIfField.parse`), so it is compared exactly like a real value. The record is never updated. Only fields the checked Flows' conditions use, and that the user can read, can be simulated; the result lists the changes and is marked `simulated`.
+
+**On record pages**, `flowProofRecordCheck` (record page component and screen quick action) runs this check for the current record when the user clicks **Check automation**, never on page load, because each check reads every Flow definition. Apex derives the object from the record Id when a quick action doesn't pass it.
+
 ### 3.2 Flow health checks (`FlowProofFlowHealthAnalyzer`)
 
 Best-practice checks on the full Flow metadata. They hold whichever record is saved, and they only suggest: FlowProof never changes a Flow. Each finding names the elements it's based on.

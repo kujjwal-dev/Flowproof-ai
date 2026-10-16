@@ -251,6 +251,73 @@ private class FlowProofInvestigationServiceTest {
     }
 
     @IsTest
+    static void shouldSimulateValuesWithoutChangingTheRecord() {
+        Opportunity opportunity = FlowProofTestDataFactory.createOpportunity('What If', 'Closed Won', 25000, true);
+        FlowProofTestStubs.CatalogQueries queries = new FlowProofTestStubs.CatalogQueries();
+        queries.entities.add(FlowProofTestStubs.entity('Opportunity'));
+        queries.flows.add(FlowProofTestStubs.activeOpportunityFlow('Opportunity_Onboarding'));
+        FlowProofInvestigationService service = new FlowProofInvestigationService(
+            new FlowProofFlowCatalogService(queries),
+            new FlowProofTestStubs.Definitions(FlowProofTestStubs.onboardingStart()),
+            new FlowProofRecordService()
+        );
+
+        Test.startTest();
+        FlowProofSweepResult actual = service.checkAllFlows('Opportunity', opportunity.Id);
+        FlowProofSweepResult simulated = service.checkAllFlows(
+            'Opportunity',
+            opportunity.Id,
+            new Map<String, String>{ 'Type' => 'New Customer' }
+        );
+        Test.stopTest();
+
+        Assert.isFalse(actual.simulated, 'A real check is not simulated');
+        Assert.areEqual('NOT_SATISFIED', actual.rows[0].overallCode, 'Blank Type fails today');
+        List<String> labels = labels(actual.whatIfFields);
+        List<String> sortedLabels = labels.clone();
+        sortedLabels.sort();
+        Assert.areEqual(
+            new Set<String>{ 'Amount', 'StageName', 'Type' },
+            apiNames(actual.whatIfFields),
+            'The form lists the condition fields'
+        );
+        Assert.areEqual(sortedLabels, labels, 'The form is sorted by label');
+        Assert.isTrue(simulated.simulated, 'The check is marked simulated');
+        Assert.areEqual('SATISFIED', simulated.rows[0].overallCode, 'With Type set, the conditions are met');
+        Assert.areEqual(
+            new List<String>{ 'Type: (blank) → New Customer' },
+            simulated.simulatedChanges,
+            'The change is described'
+        );
+        Assert.isNull(
+            [SELECT Type FROM Opportunity WHERE Id = :opportunity.Id].Type,
+            'The record itself is never changed'
+        );
+    }
+
+    @IsTest
+    static void shouldRejectInvalidSimulatedValues() {
+        Opportunity opportunity = FlowProofTestDataFactory.createOpportunity('Bad What If', 'Closed Won', 25000, true);
+        FlowProofInvestigationService service = FlowProofTestStubs.investigationService(
+            FlowProofTestStubs.activeOpportunityFlow('Opportunity_Onboarding'),
+            FlowProofTestStubs.onboardingStart()
+        );
+        List<Map<String, String>> invalid = new List<Map<String, String>>{
+            new Map<String, String>{ 'Amount' => 'lots' },
+            new Map<String, String>{ 'Description' => 'not checked by these Flows' }
+        };
+
+        for (Map<String, String> values : invalid) {
+            try {
+                service.checkAllFlows('Opportunity', opportunity.Id, values);
+                Assert.fail('Expected IllegalArgumentException for ' + values);
+            } catch (IllegalArgumentException e) {
+                Assert.isNotNull(e.getMessage(), 'The message explains the problem');
+            }
+        }
+    }
+
+    @IsTest
     static void shouldRejectIncompleteSweep() {
         try {
             new FlowProofInvestigationService().checkAllFlows('Opportunity', null);
@@ -272,6 +339,22 @@ private class FlowProofInvestigationServiceTest {
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────
+
+    private static Set<String> apiNames(List<FlowProofWhatIfField> fields) {
+        Set<String> names = new Set<String>();
+        for (FlowProofWhatIfField field : fields) {
+            names.add(field.apiName);
+        }
+        return names;
+    }
+
+    private static List<String> labels(List<FlowProofWhatIfField> fields) {
+        List<String> labels = new List<String>();
+        for (FlowProofWhatIfField field : fields) {
+            labels.add(field.label);
+        }
+        return labels;
+    }
 
     private static Set<String> ruleCodes(List<FlowProofFinding> findings) {
         Set<String> codes = new Set<String>();

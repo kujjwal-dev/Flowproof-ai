@@ -2,7 +2,11 @@
   "packageDirectories": [
     {
       "path": "force-app",
-      "default": true
+      "default": true,
+      "package": "FlowProof AI",
+      "versionName": "Pilot",
+      "versionNumber": "0.1.0.NEXT",
+      "versionDescription": "Record-triggered Flow investigations with evidence labels, Check all Flows, what-if checks, Flow health suggestions and optional AI explanations."
     },
     {
       "path": "demo",
@@ -16,5 +20,12 @@
   "name": "flowproof-ai",
   "namespace": "",
   "sfdcLoginUrl": "https://login.salesforce.com",
-  "sourceApiVersion": "68.0"
+  "sourceApiVersion": "68.0",
+  "replacements": [
+    {
+      "glob": "org-config/**/*-meta.xml",
+      "stringToReplace": "__FLOWPROOF_ORG_URL__",
+      "replaceWithEnv": "FLOWPROOF_ORG_URL"
+    }
+  ]
 }

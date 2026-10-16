@@ -84,6 +84,20 @@ public with sharing class FlowProofInvestigationService {
      * @throws FlowProofException when the Flows or the record cannot be read with the user's permissions
      */
     public FlowProofSweepResult checkAllFlows(String objectApiName, Id recordId) {
+        return checkAllFlows(objectApiName, recordId, null);
+    }
+
+    /**
+     * Like checkAllFlows, but compares the Flows with simulated values for some fields ("what if").
+     * The record is never changed: only the in-memory copy of its values is.
+     * @param objectApiName API name of the record's object
+     * @param recordId the record
+     * @param whatIfValues simulated values by field API name (blank means blank); null or empty for a real check
+     * @return one row per checked Flow; simulated and simulatedChanges say what was changed
+     * @throws IllegalArgumentException when the object or record is missing, or a simulated value is invalid
+     * @throws FlowProofException when the Flows or the record cannot be read with the user's permissions
+     */
+    public FlowProofSweepResult checkAllFlows(String objectApiName, Id recordId, Map<String, String> whatIfValues) {
         if (String.isBlank(objectApiName) || recordId == null) {
             throw new IllegalArgumentException('Choose an object and a record to check.');
         }
@@ -118,6 +132,12 @@ public with sharing class FlowProofInvestigationService {
         FlowProofRecordSnapshot snapshot = fields.isEmpty()
             ? access
             : records.getSnapshot(objectApiName, recordId, fields);
+        // Described before simulated values are applied, so the form shows the real current values.
+        sweep.whatIfFields = records.describeWhatIfFields(snapshot);
+        if (whatIfValues != null && !whatIfValues.isEmpty()) {
+            sweep.simulated = true;
+            sweep.simulatedChanges = FlowProofRecordService.applyWhatIfValues(snapshot, whatIfValues);
+        }
         for (Integer i = 0; i < results.size(); i++) {
             finish(contexts[i], results[i], contexts[i].isSameObject() ? snapshot : null);
             sweep.rows.add(new FlowProofSweepRow(results[i]));

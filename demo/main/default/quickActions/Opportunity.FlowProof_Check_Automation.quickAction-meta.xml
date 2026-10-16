@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionSubtype>ScreenAction</actionSubtype>
+    <description
+  >FlowProof AI: check which record-triggered Flows match this Opportunity, and why.</description>
+    <label>Check automation</label>
+    <lightningWebComponent>flowProofRecordCheck</lightningWebComponent>
+    <optionsCreateFeedItem>false</optionsCreateFeedItem>
+    <type>LightningWebComponent</type>
+</QuickAction>

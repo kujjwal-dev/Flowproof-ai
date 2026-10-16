@@ -36,12 +36,20 @@
 - [x] Prompt builder with record values hidden by default, structured JSON response, grounding of key points
 - [x] Callout mocks; failure modes: bad key, 403, 404 model, 429, 5xx, blocked, cut off, malformed response, unreachable credential
 - [x] Results screen "Explain with Gemini" / Regenerate; Settings "Test Gemini connection"
-- [x] Manual: admin stores the API key in Setup and turns AI on (see SETUP.md §7). Verified 2026-10-17: connection test Connected; a real explanation of INV-0009 cited only FlowProof findings (C1–C3, CONDITIONS_NOT_MET, EXECUTION_NOT_CONFIRMED) with record values hidden
+- [x] Manual: admin stores the API key in Setup and turns AI on (see SETUP.md §8). Verified 2026-10-17: connection test Connected; a real explanation of INV-0009 cited only FlowProof findings (C1–C3, CONDITIONS_NOT_MET, EXECUTION_NOT_CONFIRMED) with record values hidden
 
 ## Phase 4b — Check all Flows and Flow health
 
 - [x] "All Flows on this object" in New investigation: every record-triggered Flow checked against one record, with Investigate per Flow
 - [x] Flow health checks on full metadata (7 rules, suggest-only), shown on Results and summarized per Flow in Check all Flows
+
+## Phase 4c — Record pages, what-if and packaging
+
+- [x] `flowProofRecordCheck`: Automation check on record pages and as a quick action (demo: Opportunity **Check automation**)
+- [x] What-if: simulate field values and re-check every Flow; nothing is saved
+- [x] `org-config` made org-independent (`FLOWPROOF_ORG_URL` replacement)
+- [ ] Unlocked package **FlowProof AI**: needs Dev Hub on in flowproof-dev, then `sf package create` and a first version
+- [ ] Record a test save: read the debug log of a real save to confirm which Flows ran and which path they took
 
 ## Phase 5 — MVP demo
 

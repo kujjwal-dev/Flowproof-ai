@@ -1,0 +1,43 @@
+<template>
+  <template lwc:if={sweep}>
+    <c-flow-proof-sweep-results
+      sweep={sweep}
+      oninvestigationcomplete={handleInvestigationComplete}
+    ></c-flow-proof-sweep-results>
+    <template lwc:if={result}>
+      <div class="slds-m-top_small latest-result">
+        <c-flow-proof-results result={result}></c-flow-proof-results>
+      </div>
+    </template>
+  </template>
+  <template lwc:else>
+    <lightning-card title="Automation check" icon-name="utility:flow">
+      <div class="slds-p-horizontal_medium">
+        <p class="slds-m-bottom_small">
+          See which record-triggered Flows match this record right now, and why
+          the others don't.
+        </p>
+        <template lwc:if={error}>
+          <p class="slds-text-color_error slds-m-bottom_small check-error">
+            {error}
+          </p>
+        </template>
+        <div class="slds-is-relative">
+          <lightning-button
+            variant="brand"
+            label="Check automation"
+            onclick={handleCheck}
+            disabled={running}
+            class="check-button"
+          ></lightning-button>
+          <template lwc:if={running}>
+            <lightning-spinner
+              alternative-text="Checking Flows"
+              size="small"
+            ></lightning-spinner>
+          </template>
+        </div>
+      </div>
+    </lightning-card>
+  </template>
+</template>

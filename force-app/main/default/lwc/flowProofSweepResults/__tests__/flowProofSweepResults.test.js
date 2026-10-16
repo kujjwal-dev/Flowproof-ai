@@ -1,9 +1,16 @@
 import { createElement } from "lwc";
 import FlowProofSweepResults from "c/flowProofSweepResults";
 import runInvestigation from "@salesforce/apex/FlowProofInvestigationController.runInvestigation";
+import simulateAllFlows from "@salesforce/apex/FlowProofInvestigationController.simulateAllFlows";
 
 jest.mock(
   "@salesforce/apex/FlowProofInvestigationController.runInvestigation",
+  () => ({ default: jest.fn() }),
+  { virtual: true }
+);
+
+jest.mock(
+  "@salesforce/apex/FlowProofInvestigationController.simulateAllFlows",
   () => ({ default: jest.fn() }),
   { virtual: true }
 );
@@ -14,6 +21,22 @@ const SWEEP = {
   recordName: "Acme Corporation - Expansion",
   flowCount: 3,
   skippedFlowLabels: ["Legacy Flow"],
+  whatIfFields: [
+    {
+      apiName: "Region__c",
+      label: "Region",
+      inputType: "picklist",
+      value: null,
+      options: [{ label: "North America", value: "North America" }]
+    },
+    { apiName: "Amount", label: "Amount", inputType: "number", value: "25000" },
+    {
+      apiName: "IsPrivate",
+      label: "Private",
+      inputType: "checkbox",
+      value: "false"
+    }
+  ],
   rows: [
     {
       flowApiName: "Opportunity_Onboarding",
@@ -143,5 +166,90 @@ describe("c-flow-proof-sweep-results", () => {
   it("explains when the object has no Flows", () => {
     const element = render({ ...SWEEP, rows: [], skippedFlowLabels: [] });
     expect(element.shadowRoot.querySelector(".no-flows")).not.toBeNull();
+  });
+
+  it("re-checks the Flows with simulated values, sending only changes", async () => {
+    simulateAllFlows.mockResolvedValue({
+      ...SWEEP,
+      simulated: true,
+      simulatedChanges: ["Region__c: (blank) → North America"],
+      rows: [
+        { ...SWEEP.rows[0], overallCode: "SATISFIED", unmatchedConditions: [] }
+      ]
+    });
+    const element = render();
+
+    element.shadowRoot.querySelector("lightning-button.what-if-toggle").click();
+    await flushPromises();
+    const region = element.shadowRoot.querySelector(
+      'lightning-combobox[data-field="Region__c"]'
+    );
+    expect(region.options[0].label).toBe("(blank)");
+    region.dispatchEvent(
+      new CustomEvent("change", { detail: { value: "North America" } })
+    );
+    element.shadowRoot
+      .querySelector('lightning-input[data-field="IsPrivate"]')
+      .dispatchEvent(new CustomEvent("change", { detail: { checked: true } }));
+    element.shadowRoot
+      .querySelector("lightning-button.simulate-button")
+      .click();
+    await flushPromises();
+
+    expect(simulateAllFlows).toHaveBeenCalledWith({
+      objectApiName: "Opportunity",
+      recordId: "006000000000001AAA",
+      values: { Region__c: "North America", IsPrivate: "true" }
+    });
+    expect(
+      element.shadowRoot.querySelector(".simulated-notice").textContent
+    ).toContain("Region__c: (blank) → North America");
+    expect(
+      element.shadowRoot.querySelector('lightning-badge[data-id="overall"]')
+        .label
+    ).toBe("Conditions met");
+    expect(element.shadowRoot.querySelector(".investigate-row")).toBeNull();
+
+    element.shadowRoot.querySelector("lightning-button.show-current").click();
+    await flushPromises();
+    expect(element.shadowRoot.querySelector(".simulated-notice")).toBeNull();
+    expect(element.shadowRoot.querySelector(".investigate-row")).not.toBeNull();
+  });
+
+  it("asks for a change before simulating", async () => {
+    const element = render();
+    element.shadowRoot.querySelector("lightning-button.what-if-toggle").click();
+    await flushPromises();
+
+    element.shadowRoot
+      .querySelector("lightning-button.simulate-button")
+      .click();
+    await flushPromises();
+
+    expect(simulateAllFlows).not.toHaveBeenCalled();
+    expect(
+      element.shadowRoot.querySelector(".what-if-error").textContent
+    ).toContain("Change at least one value");
+  });
+
+  it("shows the server message when a simulated value is invalid", async () => {
+    simulateAllFlows.mockRejectedValue({
+      body: { message: '"lots" is not a valid value for Amount.' }
+    });
+    const element = render();
+    element.shadowRoot.querySelector("lightning-button.what-if-toggle").click();
+    await flushPromises();
+    element.shadowRoot
+      .querySelector('lightning-input[data-field="Amount"]')
+      .dispatchEvent(new CustomEvent("change", { detail: { value: "lots" } }));
+
+    element.shadowRoot
+      .querySelector("lightning-button.simulate-button")
+      .click();
+    await flushPromises();
+
+    expect(
+      element.shadowRoot.querySelector(".what-if-error").textContent
+    ).toContain("not a valid value");
   });
 });

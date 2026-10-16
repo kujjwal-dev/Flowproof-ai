@@ -155,6 +155,23 @@ private class FlowProofInvestigationControllerTest {
     }
 
     @IsTest
+    static void shouldSimulateWithObjectTakenFromRecord() {
+        Opportunity opportunity = FlowProofTestDataFactory.createOpportunity('Action Test', 'Closed Won', 25000, true);
+        useStubbedInvestigation();
+
+        Test.startTest();
+        FlowProofSweepResult sweep = FlowProofInvestigationController.simulateAllFlows(
+            null,
+            opportunity.Id,
+            new Map<String, String>{ 'Type' => 'New Customer' }
+        );
+        Test.stopTest();
+
+        Assert.areEqual('Opportunity', sweep.objectApiName, 'The object comes from the record Id');
+        Assert.areEqual('SATISFIED', sweep.rows[0].overallCode, 'The simulated Type meets the conditions');
+    }
+
+    @IsTest
     static void shouldShowValidationMessageForIncompleteSweep() {
         try {
             FlowProofInvestigationController.checkAllFlows('Opportunity', null);

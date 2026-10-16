@@ -83,7 +83,15 @@ Everything except secrets lives in `org-config/`, a package directory kept out o
 | Named Credential                | `FlowProof_Org_API`        | What Apex calls: `callout:FlowProof_Org_API/services/data/...`                                    |
 | Permission set                  | `FlowProof_Org_API_Access` | Principal access plus User External Credentials object access                                     |
 
-Deploy the IdP first (`org-config/main/default/externalAuthIdentityProviders`), then the rest. The IdP's callback URL is `<My Domain>/services/extidp/callback` and is already set in the External Client App. Assign the permission set to each user who runs investigations.
+The files hold the placeholder `__FLOWPROOF_ORG_URL__` instead of an org address. The CLI swaps in the `FLOWPROOF_ORG_URL` environment variable at deploy time (a `replacements` entry in `sfdx-project.json`), so the same files work for any org:
+
+```powershell
+$env:FLOWPROOF_ORG_URL = "https://<your-my-domain>.my.salesforce.com"   # Setup → My Domain → Current My Domain URL
+sf project deploy start --source-dir org-config/main/default/externalAuthIdentityProviders --target-org <alias>
+sf project deploy start --source-dir org-config --target-org <alias>
+```
+
+Deploy the IdP first, then the rest. The IdP's callback URL is `<My Domain>/services/extidp/callback` and is already set in the External Client App. Assign the permission set to each user who runs investigations.
 
 > **Never retrieve `ExtlClntAppGlobalOauthSettings` into this project.** A retrieve includes the consumer key, and that must not reach Git.
 
@@ -106,7 +114,27 @@ Salesforce only reveals an app's consumer secret after an identity-verification 
 - `redirect_uri_mismatch`: the External Client App's callback URL must be exactly `<My Domain>/services/extidp/callback`.
 - Callouts fail with an access error: the user is missing the `FlowProof_Org_API_Access` permission set.
 
-## 7. Gemini API key (optional AI explanations)
+## 7. Install FlowProof in another org (unlocked package)
+
+The product (`force-app`) is the unlocked package **FlowProof AI**. `demo` and `org-config` are not in it.
+
+**Build a version** (needs Dev Hub on in the org that owns the package; this project uses `flowproof-dev`):
+
+```powershell
+sf package version create --package "FlowProof AI" --installation-key-bypass --code-coverage --wait 30 --target-dev-hub flowproof-dev
+sf package version promote --package "FlowProof AI@0.1.0-1" --target-dev-hub flowproof-dev   # only for a release
+```
+
+**Install** (as an admin of the target org): open the install link the version prints (`/packaging/installPackage.apexp?p0=04t…`), or run `sf package install --package 04t… --target-org <alias> --wait 20`. Choose **Install for Admins Only**, then assign permission sets.
+
+**After installing:**
+
+1. Set up the org API credential: section 6, with `FLOWPROOF_ORG_URL` set to that org's My Domain URL.
+2. Assign **FlowProof User** (or **FlowProof Admin**) and **FlowProof Org API Access** to each user.
+3. Optional: put the **FlowProof Automation Check** component on record pages (Lightning App Builder), or create a quick action for it: Object Manager → _object_ → Buttons, Links, and Actions → New Action → Lightning Web Component → `c:flowProofRecordCheck`.
+4. Optional: Gemini (section 8).
+
+## 8. Gemini API key (optional AI explanations)
 
 AI explanations are off by default and FlowProof works fully without them. The key lives only in the `Gemini_API` External Credential in Salesforce. It never goes in this repo, `.env` files, email or chat.
 

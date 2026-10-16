@@ -73,9 +73,25 @@ public with sharing class FlowProofInvestigationController {
      */
     @AuraEnabled
     public static FlowProofSweepResult checkAllFlows(String objectApiName, Id recordId) {
+        return simulateAllFlows(objectApiName, recordId, null);
+    }
+
+    /**
+     * Checks every record-triggered Flow on the object against the record with some field values
+     * replaced ("what if"). The record is never changed. Not saved.
+     * @param objectApiName API name of the record's object; derived from recordId when blank
+     * @param recordId the record
+     * @param values simulated values by field API name; null or empty for a real check
+     * @return one row per checked Flow
+     */
+    @AuraEnabled
+    public static FlowProofSweepResult simulateAllFlows(String objectApiName, Id recordId, Map<String, String> values) {
         try {
+            String objectName = String.isNotBlank(objectApiName)
+                ? objectApiName
+                : recordId?.getSObjectType().getDescribe().getName();
             FlowProofInvestigationService service = investigationServiceOverride ?? new FlowProofInvestigationService();
-            return service.checkAllFlows(objectApiName, recordId);
+            return service.checkAllFlows(objectName, recordId, values);
         } catch (Exception e) {
             throw handled(e);
         }

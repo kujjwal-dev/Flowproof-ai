@@ -5,6 +5,8 @@
 FlowProof AI is a Salesforce-native troubleshooting app for admins and developers. Pick a record, pick the automation you expected to fire, and click **Investigate**. FlowProof inspects the automation's metadata and the record's values, evaluates supported conditions deterministically, and explains what the evidence does and does not show.
 
 - **Check all Flows:** check every record-triggered Flow on the object against one record in one click.
+- **What if:** change a few values in a form and see which Flows would run. Nothing is saved.
+- **Automation check on any record page:** a component and quick action that run the check right from the record.
 - **Flow health:** best-practice suggestions from the Flow's full definition, such as record operations inside loops, missing fault paths and hard-coded Ids. Suggestions only; FlowProof never changes a Flow.
 - **AI explanations (optional):** Google Gemini restates the findings in plain language, with record values hidden by default. Each point cites the findings it relies on.
 

@@ -56,6 +56,50 @@ public with sharing class FlowProofRecordService {
     }
 
     /**
+     * Describes a snapshot's readable fields for the "what if" form, sorted by label.
+     * @param snapshot a snapshot built by getSnapshot
+     * @return one entry per readable field, with its current value
+     */
+    public List<FlowProofWhatIfField> describeWhatIfFields(FlowProofRecordSnapshot snapshot) {
+        List<FlowProofWhatIfField> fields = new List<FlowProofWhatIfField>();
+        Map<String, Schema.SObjectField> tokensByName = describeObject(snapshot.objectApiName).fields.getMap();
+        for (FlowProofRecordSnapshot.FieldValue field : snapshot.fieldsByName.values()) {
+            Schema.SObjectField token = tokensByName.get(field.fieldApiName.toLowerCase());
+            if (token != null && field.exists == true && field.isAccessible == true) {
+                fields.add(new FlowProofWhatIfField(token.getDescribe(), field));
+            }
+        }
+        fields.sort();
+        return fields;
+    }
+
+    /**
+     * Replaces field values in a snapshot with simulated ones. Only the snapshot changes; the
+     * record is never updated.
+     * @param snapshot a snapshot built by getSnapshot
+     * @param values simulated values by field API name, as typed in (blank means blank)
+     * @return the changes made, e.g. "Region__c: (blank) → North America"
+     * @throws IllegalArgumentException when a field is not readable in the snapshot or a value does not fit its type
+     */
+    public static List<String> applyWhatIfValues(FlowProofRecordSnapshot snapshot, Map<String, String> values) {
+        List<String> changes = new List<String>();
+        for (String fieldApiName : values.keySet()) {
+            FlowProofRecordSnapshot.FieldValue field = snapshot.getField(fieldApiName);
+            if (field == null || field.exists != true || field.isAccessible != true) {
+                throw new IllegalArgumentException(fieldApiName + ' is not a field these Flows check.');
+            }
+            String before = FlowProofValueComparator.displayActual(field);
+            Object simulated = FlowProofWhatIfField.parse(field, values.get(fieldApiName));
+            snapshot.putValue(field.fieldApiName, field.fieldType, simulated);
+            String after = FlowProofValueComparator.displayActual(snapshot.getField(field.fieldApiName));
+            if (!before.equals(after)) {
+                changes.add(field.fieldApiName + ': ' + before + ' → ' + after);
+            }
+        }
+        return changes;
+    }
+
+    /**
      * @param objectDescribe the object's describe result
      * @return the object's name field (Name, CaseNumber, ...) when the user can read it, else null
      */

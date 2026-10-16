@@ -18,19 +18,19 @@
         <parameterName>AuthorizeUrl</parameterName>
         <parameterType>AuthorizeUrl</parameterType>
         <parameterValue
-    >https://orgfarm-9ef46cef41-dev-ed.develop.my.salesforce.com/services/oauth2/authorize</parameterValue>
+    >__FLOWPROOF_ORG_URL__/services/oauth2/authorize</parameterValue>
     </externalAuthIdentityProviderParameters>
     <externalAuthIdentityProviderParameters>
         <parameterName>TokenUrl</parameterName>
         <parameterType>TokenUrl</parameterType>
         <parameterValue
-    >https://orgfarm-9ef46cef41-dev-ed.develop.my.salesforce.com/services/oauth2/token</parameterValue>
+    >__FLOWPROOF_ORG_URL__/services/oauth2/token</parameterValue>
     </externalAuthIdentityProviderParameters>
     <externalAuthIdentityProviderParameters>
         <parameterName>UserInfoUrl</parameterName>
         <parameterType>UserInfoUrl</parameterType>
         <parameterValue
-    >https://orgfarm-9ef46cef41-dev-ed.develop.my.salesforce.com/services/oauth2/userinfo</parameterValue>
+    >__FLOWPROOF_ORG_URL__/services/oauth2/userinfo</parameterValue>
     </externalAuthIdentityProviderParameters>
     <label>FlowProof Org IdP</label>
 </ExternalAuthIdentityProvider>

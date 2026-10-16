@@ -22,6 +22,15 @@ public with sharing class FlowProofSweepResult {
     /** Labels of Flows not checked because the run reached its limit. */
     @AuraEnabled
     public List<String> skippedFlowLabels { get; set; }
+    /** Fields the checked Flows' conditions use, with current values, for the "what if" form. */
+    @AuraEnabled
+    public List<FlowProofWhatIfField> whatIfFields { get; set; }
+    /** True when the rows use simulated values instead of the record's current values. */
+    @AuraEnabled
+    public Boolean simulated { get; set; }
+    /** The simulated changes, e.g. "Region__c: (blank) → North America"; empty for a real check. */
+    @AuraEnabled
+    public List<String> simulatedChanges { get; set; }
     /** Always NOT_CONFIRMED: Salesforce keeps no per-record run history for record-triggered Flows. */
     @AuraEnabled
     public String historicalExecution { get; set; }
@@ -36,6 +45,9 @@ public with sharing class FlowProofSweepResult {
         this.flowCount = 0;
         this.rows = new List<FlowProofSweepRow>();
         this.skippedFlowLabels = new List<String>();
+        this.whatIfFields = new List<FlowProofWhatIfField>();
+        this.simulated = false;
+        this.simulatedChanges = new List<String>();
         this.historicalExecution = 'NOT_CONFIRMED';
         this.checkedAt = Datetime.now();
     }
