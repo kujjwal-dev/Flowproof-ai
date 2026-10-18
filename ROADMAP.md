@@ -48,8 +48,9 @@
 - [x] `flowProofRecordCheck`: Automation check on record pages and as a quick action (demo: Opportunity **Check automation**)
 - [x] What-if: simulate field values and re-check every Flow; nothing is saved
 - [x] `org-config` made org-independent (`FLOWPROOF_ORG_URL` replacement)
-- [ ] Unlocked package **FlowProof AI**: needs Dev Hub on in flowproof-dev, then `sf package create` and a first version
-- [ ] Record a test save: read the debug log of a real save to confirm which Flows ran and which path they took
+- [x] Unlocked package **FlowProof AI** (0Ho…WkHCAU): version 0.1.0-1 built (04tbm000000qKM1AAM, 95% coverage)
+- [x] Record a test save: debug log of a real save shows which Flows ran, what they did, and which did not start (verified on flowproof-dev 2026-10-18)
+- [ ] Promote a version so it can be installed in production and Developer Edition orgs (beta versions install only in sandboxes and scratch orgs)
 
 ## Phase 5 — MVP demo
 

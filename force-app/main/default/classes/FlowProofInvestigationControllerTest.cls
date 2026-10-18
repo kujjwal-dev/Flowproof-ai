@@ -172,6 +172,40 @@ private class FlowProofInvestigationControllerTest {
     }
 
     @IsTest
+    static void shouldStartReadAndStopSaveTrace() {
+        Opportunity opportunity = FlowProofTestDataFactory.createOpportunity('Trace Test', 'Closed Won', 25000, true);
+        String traceFlagId = '7tf' + '0'.repeat(11) + '1AAA';
+        Test.setMock(
+            HttpCalloutMock.class,
+            new FlowProofTestStubs.RoutingMock()
+                .route('GET', 'FROM DebugLevel', 200, '{"records":[{"Id":"7dl000000000001AAA"}]}')
+                .route('GET', 'FROM TraceFlag', 200, '{"records":[]}')
+                .route('POST', 'sobjects/TraceFlag', 201, '{"id":"' + traceFlagId + '"}')
+                .route('GET', 'FROM ApexLog', 200, '{"records":[]}')
+                .route('DELETE', 'sobjects/TraceFlag/' + traceFlagId, 204, '')
+        );
+
+        Test.startTest();
+        FlowProofSaveTraceSession session = FlowProofInvestigationController.startSaveTrace(opportunity.Id);
+        FlowProofSaveTrace trace = FlowProofInvestigationController.readSaveTrace(session);
+        FlowProofInvestigationController.stopSaveTrace(session);
+        Test.stopTest();
+
+        Assert.areEqual(traceFlagId, session.traceFlagId, 'Logging was switched on');
+        Assert.isFalse(trace.logFound, 'No save was logged in this test');
+    }
+
+    @IsTest
+    static void shouldShowSafeMessageWhenSaveTraceCannotStart() {
+        try {
+            FlowProofInvestigationController.startSaveTrace(null);
+            Assert.fail('Expected AuraHandledException without a record');
+        } catch (AuraHandledException e) {
+            Assert.isTrue(e.getMessage().contains('record'), 'Message should say what is missing: ' + e.getMessage());
+        }
+    }
+
+    @IsTest
     static void shouldShowValidationMessageForIncompleteSweep() {
         try {
             FlowProofInvestigationController.checkAllFlows('Opportunity', null);

@@ -1,0 +1,139 @@
+<template>
+  <section class="slds-box slds-is-relative slds-m-top_medium save-trace">
+    <h3 class="slds-text-heading_small slds-m-bottom_x-small">
+      Prove it with a real save
+    </h3>
+
+    <template lwc:if={isIdle}>
+      <p class="slds-m-bottom_small intro">
+        FlowProof turns on a debug log for you for 30 minutes. Save this record
+        once, and FlowProof shows which Flows really ran and what they did.
+      </p>
+      <lightning-button
+        label="Record a test save"
+        onclick={handleStart}
+        disabled={busy}
+        class="start-button"
+      ></lightning-button>
+    </template>
+
+    <template lwc:if={isRecording}>
+      <ol class="slds-list_ordered slds-m-bottom_small steps">
+        <li>
+          Open this record in another tab and save it. Change a field if nothing
+          needs changing.
+        </li>
+        <li>Come back here and click Show what happened.</li>
+      </ol>
+      <template lwc:if={notFoundMessage}>
+        <p class="slds-text-color_weak slds-m-bottom_small not-found">
+          {notFoundMessage}
+        </p>
+      </template>
+      <lightning-button
+        variant="brand"
+        label="Show what happened"
+        onclick={handleRead}
+        disabled={busy}
+        class="read-button slds-m-right_x-small"
+      ></lightning-button>
+      <lightning-button
+        label="Cancel"
+        onclick={handleCancel}
+        disabled={busy}
+        class="cancel-button"
+      ></lightning-button>
+    </template>
+
+    <template lwc:if={isDone}>
+      <p class="slds-m-bottom_small saved-at">
+        Save at
+        <lightning-formatted-date-time
+          value={trace.savedAt}
+          hour="2-digit"
+          minute="2-digit"
+          second="2-digit"
+        ></lightning-formatted-date-time>
+        ({trace.source}).
+      </p>
+
+      <template lwc:if={hasRuns}>
+        <ul class="slds-has-dividers_around-space slds-m-bottom_small runs">
+          <template for:each={runs} for:item="run">
+            <li key={run.key} class="slds-item run">
+              <div class="slds-grid slds-grid_vertical-align-center">
+                <span class="slds-text-title_bold slds-m-right_small"
+                  >{run.label}</span
+                >
+                <lightning-badge
+                  label={run.status.label}
+                  class={run.status.badgeClass}
+                ></lightning-badge>
+              </div>
+              <template lwc:if={run.hasElements}>
+                <p class="slds-text-body_small slds-m-top_xx-small elements">
+                  Ran: {run.elementsText}
+                </p>
+              </template>
+              <template lwc:if={run.hasOutcomes}>
+                <p class="slds-text-body_small outcomes">
+                  Decision outcomes: {run.outcomesText}
+                </p>
+              </template>
+              <template for:each={run.errorItems} for:item="error">
+                <p
+                  key={error.key}
+                  class="slds-text-body_small slds-text-color_error run-error"
+                >
+                  {error.text}
+                </p>
+              </template>
+            </li>
+          </template>
+        </ul>
+      </template>
+      <template lwc:else>
+        <p class="slds-m-bottom_small no-runs">
+          No record-triggered Flow ran for this record on this save.
+        </p>
+      </template>
+
+      <template lwc:if={hasNotStarted}>
+        <p class="slds-m-bottom_small not-started">
+          <strong class="slds-m-right_xx-small">Did not start:</strong>
+          {notStartedText}
+        </p>
+      </template>
+
+      <template lwc:if={hasValidationFailures}>
+        <p class="slds-m-bottom_small slds-text-color_error validation">
+          <strong class="slds-m-right_xx-small">Validation:</strong>
+          {validationText}
+        </p>
+      </template>
+
+      <p
+        class="slds-text-body_small slds-text-color_weak slds-m-bottom_small note"
+      >
+        {doneNote}
+      </p>
+      <lightning-button
+        label="Record another save"
+        onclick={handleStart}
+        disabled={busy}
+        class="again-button"
+      ></lightning-button>
+    </template>
+
+    <template lwc:if={error}>
+      <p class="slds-text-color_error slds-m-top_small trace-error">{error}</p>
+    </template>
+
+    <template lwc:if={busy}>
+      <lightning-spinner
+        alternative-text="Working"
+        size="small"
+      ></lightning-spinner>
+    </template>
+  </section>
+</template>

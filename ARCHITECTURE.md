@@ -60,7 +60,7 @@ FlowProofAiService                     optional, separate transaction
 7. **Persist** the Investigation, Findings, and result snapshot. DML comes last, after every callout.
 8. Return the result DTO.
 
-Step 3 also keeps the full Flow metadata, and the **Flow health checks** (§3.2) run on it. Health findings are stored in `healthFindings`, apart from the diagnosis.
+Step 3 also keeps the full Flow metadata, and the **Flow health checks** (§3.3) run on it. Health findings are stored in `healthFindings`, apart from the diagnosis.
 
 **Transaction 2 (optional): `requestAiExplanation(investigationId, regenerate)`**
 
@@ -84,7 +84,20 @@ One click checks every record-triggered Flow on the record's object. Nothing is 
 
 **On record pages**, `flowProofRecordCheck` (record page component and screen quick action) runs this check for the current record when the user clicks **Check automation**, never on page load, because each check reads every Flow definition. Apex derives the object from the record Id when a quick action doesn't pass it.
 
-### 3.2 Flow health checks (`FlowProofFlowHealthAnalyzer`)
+### 3.2 Record a test save (`FlowProofSaveTraceService`)
+
+Turns a guess into proof for one save. All calls go through `FlowProof_Org_API` as the user (`FlowProofToolingClient`), so only users allowed to manage debug logs can use it.
+
+1. **Start:** create (once) the debug level `FlowProof_Trace` (Workflow FINER, Validation INFO, Database INFO, everything else NONE) and a `USER_DEBUG` trace flag on the user for 30 minutes. If the user already has an active trace flag, FlowProof switches it to its debug level and restores the old level afterwards.
+2. **The user saves the record** in the normal UI. FlowProof never saves it.
+3. **Read:** list the user's `ApexLog` rows since the start (newest 25). One save can write several logs (before-save, after-save, …), so FlowProof combines every log that started 5 s before to 10 s after the record's `LastModifiedDate` (when the user made that save). `FlowProofDebugLogParser` reads Flow interviews (`FLOW_CREATE_INTERVIEW_*` gives the version Id, `FLOW_VALUE_ASSIGNMENT …|$Record|{Id=…}` ties an interview to the record, `FLOW_ELEMENT_BEGIN` lists elements, `FLOW_RULE_DETAIL … true` decision outcomes, `*ERROR*`/`*FAULT*` errors, `FLOW_INTERVIEW_FINISHED`) and `VALIDATION_FAIL`/`VALIDATION_ERROR`. If nothing matches around the save time, the newest log in which a Flow ran for the record is used.
+4. **Result:** Flows that ran (Ran / Failed / Started), active record-triggered Flows on the object whose version did not run ("did not start": no interview was created on that save), and failed validation rules. Then the trace flag is deleted or restored.
+
+Only names, element names, outcomes, errors and validation messages are kept. The log also contains the record's field values (the `$Record` snapshot); FlowProof never stores or shows them. Scheduled and asynchronous paths run in later transactions and are not included.
+
+Verified 2026-10-18 on flowproof-dev: a REST save of the demo Acme Opportunity wrote three logs over two seconds; the combined read showed Opportunity Onboarding ran and created its Task, matching the Task's creation time.
+
+### 3.3 Flow health checks (`FlowProofFlowHealthAnalyzer`)
 
 Best-practice checks on the full Flow metadata. They hold whichever record is saved, and they only suggest: FlowProof never changes a Flow. Each finding names the elements it's based on.
 

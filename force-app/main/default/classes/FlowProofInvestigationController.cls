@@ -10,6 +10,8 @@ public with sharing class FlowProofInvestigationController {
     private static FlowProofInvestigationService investigationServiceOverride;
     @TestVisible
     private static FlowProofAiService aiServiceOverride;
+    @TestVisible
+    private static FlowProofSaveTraceService saveTraceServiceOverride;
 
     /**
      * @return objects that have record-triggered Flows, sorted by label
@@ -92,6 +94,47 @@ public with sharing class FlowProofInvestigationController {
                 : recordId?.getSObjectType().getDescribe().getName();
             FlowProofInvestigationService service = investigationServiceOverride ?? new FlowProofInvestigationService();
             return service.checkAllFlows(objectName, recordId, values);
+        } catch (Exception e) {
+            throw handled(e);
+        }
+    }
+
+    /**
+     * Switches on debug logging for the user so the next save of the record can be read.
+     * @param recordId the record the user will save
+     * @return the recording session
+     */
+    @AuraEnabled
+    public static FlowProofSaveTraceSession startSaveTrace(Id recordId) {
+        try {
+            return (saveTraceServiceOverride ?? new FlowProofSaveTraceService()).start(recordId);
+        } catch (Exception e) {
+            throw handled(e);
+        }
+    }
+
+    /**
+     * Reads the debug log of the user's newest save of the record since the session started.
+     * @param session the recording session
+     * @return which Flows ran, which did not start, and validation failures
+     */
+    @AuraEnabled
+    public static FlowProofSaveTrace readSaveTrace(FlowProofSaveTraceSession session) {
+        try {
+            return (saveTraceServiceOverride ?? new FlowProofSaveTraceService()).read(session);
+        } catch (Exception e) {
+            throw handled(e);
+        }
+    }
+
+    /**
+     * Switches FlowProof's debug logging off again.
+     * @param session the recording session
+     */
+    @AuraEnabled
+    public static void stopSaveTrace(FlowProofSaveTraceSession session) {
+        try {
+            (saveTraceServiceOverride ?? new FlowProofSaveTraceService()).stop(session);
         } catch (Exception e) {
             throw handled(e);
         }

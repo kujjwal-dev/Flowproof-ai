@@ -18,6 +18,12 @@ FlowProof runs as the signed-in user and must never reveal anything that user ca
 - **Metadata access:** reading Flow definitions needs extra permissions. The exact requirement is documented in [ARCHITECTURE.md](ARCHITECTURE.md) once verified. If a user lacks it, FlowProof reports _Insufficient evidence_ and doesn't fail silently.
 - **Permission sets:** access to the app is granted only through FlowProof permission sets, never profiles.
 
+## Debug logs ("Record a test save")
+
+- FlowProof switches on a debug log **only for the signed-in user**, only when they click **Record a test save**, for at most 30 minutes, and switches it off (or restores the user's own debug level) when it has read the save.
+- It creates one debug level, `FlowProof_Trace`, in the org on first use. Creating trace flags and reading logs needs debug-log permissions; the API refuses users without them, and FlowProof shows that message.
+- Debug logs contain field values of saved records (Salesforce writes the `$Record` snapshot). FlowProof reads only Flow names, element names, decision outcomes, errors and validation messages, never stores the log, and never sends it to Gemini. The logs themselves stay in the org under Salesforce's normal retention.
+
 ## External AI (Google Gemini)
 
 AI explanations are **optional** and **off by default**. Deterministic investigation results never depend on Gemini.

@@ -237,6 +237,99 @@ public class FlowProofTestStubs {
         }
     }
 
+    /**
+     * A debug log of one save, in the format Salesforce writes with Workflow at FINER: one
+     * record-triggered Flow ran for the record and created a Task.
+     * @param recordId the saved record
+     * @param flowLabel the Flow's label
+     * @param versionId15 the Flow version Id (15 characters)
+     * @return the log text
+     */
+    public static String flowSaveLog(Id recordId, String flowLabel, String versionId15) {
+        String interview = '1240af9156dfd0f4ef39278b84661a14e519f14-7522';
+        return String.join(
+            new List<String>{
+                '68.0 APEX_CODE,NONE;DB,INFO;VALIDATION,INFO;WORKFLOW,FINER',
+                '03:17:05.89 (89457080)|EXECUTION_STARTED',
+                '03:17:05.89 (89541421)|CODE_UNIT_STARTED|[EXTERNAL]|Flow:Opportunity',
+                '03:17:05.105 (105229296)|FLOW_CREATE_INTERVIEW_BEGIN|00D000000000001|300000000000001|' + versionId15,
+                '03:17:05.105 (105438358)|FLOW_CREATE_INTERVIEW_END|' +
+                interview +
+                '|' +
+                flowLabel,
+                '03:17:05.107 (107726890)|FLOW_START_INTERVIEWS_BEGIN|1',
+                '03:17:05.107 (107864291)|FLOW_START_INTERVIEW_BEGIN|' +
+                interview +
+                '|' +
+                flowLabel,
+                '03:17:05.107 (109103743)|FLOW_VALUE_ASSIGNMENT|' +
+                interview +
+                '|$Record|{Id=' +
+                recordId +
+                ', IsDeleted=false, Name=Synthetic, StageName=Closed Won}',
+                '03:17:05.107 (109200000)|FLOW_ELEMENT_BEGIN|' +
+                interview +
+                '|FlowDecision|Is_Large',
+                '03:17:05.107 (109300000)|FLOW_RULE_DETAIL|' +
+                interview +
+                '|Large_Deal|true',
+                '03:17:05.107 (109379645)|FLOW_ELEMENT_BEGIN|' +
+                interview +
+                '|FlowRecordCreate|Create_Onboarding_Task',
+                '03:17:05.107 (109554147)|FLOW_ELEMENT_END|' +
+                interview +
+                '|FlowRecordCreate|Create_Onboarding_Task',
+                '03:17:05.107 (109645638)|FLOW_START_INTERVIEW_END|' +
+                interview +
+                '|' +
+                flowLabel,
+                '03:17:05.107 (288563407)|FLOW_INTERVIEW_FINISHED|' +
+                interview +
+                '|' +
+                flowLabel,
+                '03:17:05.89 (291764917)|CODE_UNIT_FINISHED|Flow:Opportunity',
+                '03:17:05.89 (291784007)|EXECUTION_FINISHED'
+            },
+            '\n'
+        );
+    }
+
+    /** HTTP mock that answers by method and URL fragment; records the requests it answers. */
+    public class RoutingMock implements HttpCalloutMock {
+        private final List<List<Object>> routes = new List<List<Object>>();
+        /** Requests answered, in order. */
+        public List<HttpRequest> requests = new List<HttpRequest>();
+
+        /**
+         * Adds a route; the first matching route answers.
+         * @param method HTTP method (GET, POST, DELETE)
+         * @param urlFragment text the URL-decoded endpoint must contain
+         * @param status status to return
+         * @param body body to return
+         * @return this mock, for chaining
+         */
+        public RoutingMock route(String method, String urlFragment, Integer status, String body) {
+            routes.add(new List<Object>{ method, urlFragment, status, body });
+            return this;
+        }
+
+        public HttpResponse respond(HttpRequest request) {
+            requests.add(request);
+            String endpoint = EncodingUtil.urlDecode(request.getEndpoint(), 'UTF-8');
+            HttpResponse response = new HttpResponse();
+            response.setStatusCode(404);
+            response.setBody('[{"message":"No route for ' + request.getMethod() + ' ' + endpoint + '"}]');
+            for (List<Object> route : routes) {
+                if (request.getMethod() == (String) route[0] && endpoint.contains((String) route[1])) {
+                    response.setStatusCode((Integer) route[2]);
+                    response.setBody((String) route[3]);
+                    break;
+                }
+            }
+            return response;
+        }
+    }
+
     /** HTTP mock returning a fixed status and body; records the requests it answers. */
     public class FixedResponse implements HttpCalloutMock {
         private final Integer status;

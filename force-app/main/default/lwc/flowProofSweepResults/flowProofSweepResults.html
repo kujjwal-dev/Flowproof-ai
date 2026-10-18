@@ -201,6 +201,12 @@
           </p>
         </template>
 
+        <template lwc:if={canInvestigate}>
+          <c-flow-proof-save-trace
+            record-id={current.recordId}
+          ></c-flow-proof-save-trace>
+        </template>
+
         <template lwc:if={running}>
           <lightning-spinner
             alternative-text="Working"

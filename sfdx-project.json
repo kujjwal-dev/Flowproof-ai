@@ -4,9 +4,9 @@
       "path": "force-app",
       "default": true,
       "package": "FlowProof AI",
-      "versionName": "Pilot",
-      "versionNumber": "0.1.0.NEXT",
-      "versionDescription": "Record-triggered Flow investigations with evidence labels, Check all Flows, what-if checks, Flow health suggestions and optional AI explanations."
+      "versionName": "Pilot 2",
+      "versionNumber": "0.2.0.NEXT",
+      "versionDescription": "Adds Record a test save: shows which Flows really ran on a save, from its debug log."
     },
     {
       "path": "demo",
