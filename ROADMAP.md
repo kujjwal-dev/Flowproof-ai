@@ -50,7 +50,8 @@
 - [x] `org-config` made org-independent (`FLOWPROOF_ORG_URL` replacement)
 - [x] Unlocked package **FlowProof AI** (0Ho…WkHCAU): versions 0.1.0-1 (04tbm000000qKM1AAM) and 0.2.0-1 with Record a test save (04tbm000000qMndAAE, 94% coverage), both beta
 - [x] Record a test save: debug log of a real save shows which Flows ran, what they did, and which did not start (verified on flowproof-dev 2026-10-18)
-- [ ] Promote a version so it can be installed in production and Developer Edition orgs (beta versions install only in sandboxes and scratch orgs)
+- [x] Version 0.2.0 promoted to released (2026-10-18): installs in production and Developer Edition orgs. Next builds are 0.3.0.
+- [x] README rewritten for admins: what it is, how to install, one-time setup in plain language
 
 ## Phase 5 — MVP demo
 

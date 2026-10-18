@@ -118,14 +118,14 @@ Salesforce only reveals an app's consumer secret after an identity-verification 
 
 The product (`force-app`) is the unlocked package **FlowProof AI**. `demo` and `org-config` are not in it.
 
-**Build a version** (needs Dev Hub on in the org that owns the package; this project uses `flowproof-dev`):
+**Build a version.** This needs Dev Hub on in the org that owns the package (`flowproof-dev`). Released: **0.2.0** (`04tbm000000qMndAAE`); new builds use the next number in `sfdx-project.json` (now 0.3.0).
 
 ```powershell
-sf package version create --package "FlowProof AI" --installation-key-bypass --code-coverage --wait 30 --target-dev-hub flowproof-dev
-sf package version promote --package "FlowProof AI@0.1.0-1" --target-dev-hub flowproof-dev   # only for a release
+sf package version create --package "FlowProof AI" --installation-key-bypass --code-coverage --definition-file config/project-scratch-def.json --wait 60 --target-dev-hub flowproof-dev
+sf package version promote --package "FlowProof AI@0.3.0-1" --target-dev-hub flowproof-dev   # only for a release; beta versions install only in sandboxes and scratch orgs
 ```
 
-**Install** (as an admin of the target org): open the install link the version prints (`/packaging/installPackage.apexp?p0=04t…`), or run `sf package install --package 04t… --target-org <alias> --wait 20`. Choose **Install for Admins Only**, then assign permission sets.
+**Install** (as an admin of the target org; the full admin guide is in [README.md](README.md#install-it-in-your-org)): open the install link the version prints (`/packaging/installPackage.apexp?p0=04t…`), or run `sf package install --package 04t… --target-org <alias> --wait 20`. Choose **Install for Admins Only**, then assign permission sets.
 
 **After installing:**
 
